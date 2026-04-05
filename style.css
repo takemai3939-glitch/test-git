@@ -139,25 +139,39 @@ a:visited { color: inherit; }
    =========================== */
 .hero-section {
   background:
-    radial-gradient(ellipse at 15% 60%, rgba(99,102,241,0.14) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 25%, rgba(139,92,246,0.10) 0%, transparent 50%),
-    linear-gradient(180deg, #0b0b16 0%, #080811 100%);
-  padding: 80px 48px 88px;
+    radial-gradient(ellipse 70% 80% at 18% 55%, rgba(99,102,241,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 65% at 82% 18%, rgba(139,92,246,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 90% 85%, rgba(59,130,246,0.08) 0%, transparent 50%),
+    linear-gradient(160deg, #090912 0%, #080811 60%, #07070f 100%);
+  padding: 96px 48px 104px;
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(99,102,241,0.12);
 }
 
-/* 背景グリッド */
+/* ドットグリッド */
 .hero-section::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(99,102,241,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.025) 1px, transparent 1px);
-  background-size: 52px 52px;
+  background-image: radial-gradient(rgba(99,102,241,0.20) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 100%);
   pointer-events: none;
+}
+
+/* 右上装飾グロー */
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -80px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 65%);
+  pointer-events: none;
+  border-radius: 50%;
 }
 
 /* 2カラムflex（デスクトップ） */
@@ -180,20 +194,58 @@ a:visited { color: inherit; }
 .hero-preview {
   flex-shrink: 0;
   width: 340px;
+  perspective: 1200px;
+  position: relative;
+}
+/* グローハロ（カード後方の光） */
+.hero-preview::before {
+  content: '';
+  position: absolute;
+  inset: -48px;
+  background: radial-gradient(ellipse at 55% 50%, rgba(99,102,241,0.28) 0%, transparent 68%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 16px;
-  border: 1px solid rgba(99,102,241,0.35);
-  background: rgba(99,102,241,0.08);
+  padding: 6px 18px;
+  background: rgba(99,102,241,0.10);
   border-radius: 20px;
   font-size: 12px;
   color: #a5b4fc;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+  margin-bottom: 24px;
+  position: relative;
+  isolation: isolate;
+}
+/* グラデーションボーダー（シマー） */
+.hero-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg,
+    rgba(99,102,241,0.5),
+    rgba(167,139,250,0.8),
+    rgba(96,165,250,0.6),
+    rgba(99,102,241,0.5));
+  background-size: 300% 100%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: badge-shimmer 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes badge-shimmer {
+  0%   { background-position: 0%   0%; }
+  100% { background-position: 300% 0%; }
 }
 
 .hero-headline {
@@ -205,9 +257,14 @@ a:visited { color: inherit; }
   margin-bottom: 20px;
 }
 
-.ha-green { color: var(--color-very-strong); text-shadow: 0 0 28px rgba(34,197,94,0.45); }
-.ha-red   { color: var(--color-very-weak);   text-shadow: 0 0 28px rgba(239,68,68,0.45); }
-.ha-blue  { color: #818cf8; }
+.ha-green { color: var(--color-very-strong); text-shadow: 0 0 32px rgba(34,197,94,0.55); }
+.ha-red   { color: var(--color-very-weak);   text-shadow: 0 0 32px rgba(239,68,68,0.55); }
+.ha-blue  {
+  background: linear-gradient(120deg, #818cf8 0%, #a78bfa 50%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
 .hero-sub {
   font-size: 16px;
@@ -232,10 +289,18 @@ a:visited { color: inherit; }
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: rgba(15,15,28,0.85);
+  border: 1px solid rgba(99,102,241,0.18);
   border-radius: 10px;
   padding: 10px 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.hero-step:hover {
+  border-color: rgba(99,102,241,0.38);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.12);
 }
 
 .hf-num {
@@ -280,21 +345,52 @@ a:visited { color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 40px;
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  padding: 17px 44px;
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 60%, #6366f1 100%);
+  background-size: 200% 100%;
   color: #fff;
   border-radius: 50px;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  box-shadow: 0 6px 32px rgba(99,102,241,0.45);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow:
+    0 6px 32px rgba(99,102,241,0.45),
+    0 0 0 1px rgba(139,92,246,0.3) inset,
+    0 1px 0 rgba(255,255,255,0.15) inset;
+  transition: transform 0.22s, box-shadow 0.22s, background-position 0.4s;
   white-space: nowrap;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+/* 光走りアニメーション */
+.hero-cta::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -80%;
+  width: 50%;
+  height: 140%;
+  background: linear-gradient(105deg,
+    transparent 0%,
+    rgba(255,255,255,0.18) 50%,
+    transparent 100%);
+  transform: skewX(-12deg);
+  animation: cta-shine 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes cta-shine {
+  0%        { left: -80%; opacity: 0; }
+  10%       { opacity: 1; }
+  40%, 100% { left: 160%; opacity: 0; }
 }
 .hero-cta:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(99,102,241,0.55);
+  box-shadow:
+    0 14px 44px rgba(99,102,241,0.60),
+    0 0 0 1px rgba(139,92,246,0.4) inset,
+    0 1px 0 rgba(255,255,255,0.2) inset;
+  background-position: 100% 0;
   color: #fff;
 }
 .hero-cta:active { transform: scale(0.97); }
@@ -321,25 +417,57 @@ a:visited { color: inherit; }
    ヒーロー プレビューカード
    =========================== */
 .hero-preview-card {
-  background: var(--bg-card);
-  border: 1px solid rgba(99,102,241,0.2);
-  border-radius: 20px;
-  padding: 20px;
+  background: linear-gradient(160deg, #111128 0%, #0d0d20 100%);
+  border: 1px solid rgba(99,102,241,0.22);
+  border-radius: 22px;
+  padding: 22px;
   box-shadow:
-    0 0 0 1px rgba(99,102,241,0.08),
-    0 20px 60px rgba(0,0,0,0.6),
-    0 0 80px rgba(99,102,241,0.08);
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 2px 0 rgba(255,255,255,0.06) inset,
+    0 32px 80px rgba(0,0,0,0.75),
+    0 0 100px rgba(99,102,241,0.14);
   position: relative;
   overflow: hidden;
+  transform: rotateY(-6deg) rotateX(2deg) translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
+              box-shadow 0.5s ease;
+  will-change: transform;
+}
+.hero-preview:hover .hero-preview-card {
+  transform: rotateY(-2deg) rotateX(1deg) translateZ(8px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 2px 0 rgba(255,255,255,0.06) inset,
+    0 40px 100px rgba(0,0,0,0.8),
+    0 0 130px rgba(99,102,241,0.20);
 }
 
-/* カード内部の微妙な光沢 */
+/* 上辺グラデーションライン */
 .hero-preview-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99,102,241,0.6) 30%,
+    rgba(167,139,250,0.8) 50%,
+    rgba(99,102,241,0.6) 70%,
+    transparent 100%);
+}
+
+/* 右下コーナーの光 */
+.hero-preview-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  right: -30px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  border-radius: 50%;
 }
 
 .hpc-header {
@@ -356,13 +484,32 @@ a:visited { color: inherit; }
   letter-spacing: 0.12em;
 }
 .hpc-sample {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10px;
-  color: var(--accent);
-  background: rgba(99,102,241,0.1);
-  border: 1px solid rgba(99,102,241,0.2);
+  color: #86efac;
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.22);
   border-radius: 8px;
   padding: 2px 8px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+/* 拍動するLIVEドット */
+.hpc-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74,222,128,0.9);
+  animation: live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
 }
 
 /* SVGリング */
@@ -390,7 +537,11 @@ a:visited { color: inherit; }
   stroke-linecap: round;
   stroke-dasharray: 263.89;
   stroke-dashoffset: 73.89;
-  filter: drop-shadow(0 0 8px rgba(74,222,128,0.5));
+  animation: ring-glow-pulse 3s ease-in-out infinite;
+}
+@keyframes ring-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(74,222,128,0.55)); }
+  50%       { filter: drop-shadow(0 0 18px rgba(74,222,128,0.90)); }
 }
 .hpc-score-center {
   position: absolute;
@@ -401,10 +552,13 @@ a:visited { color: inherit; }
   justify-content: center;
 }
 .hpc-score {
-  font-size: 42px;
+  font-size: 46px;
   font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--color-strong);
+  font-weight: 800;
+  background: linear-gradient(135deg, #4ade80 0%, #86efac 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
 }
 .hpc-unit {
