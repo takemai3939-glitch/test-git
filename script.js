@@ -800,7 +800,7 @@ function resetForm() {
   if (riskEl) riskEl.textContent = '--';
 
   const commentEl = document.getElementById('comment-text');
-  if (commentEl) commentEl.innerHTML = 'フォームに数値を入力し「需給を判定する」を押してください。';
+  if (commentEl) commentEl.innerHTML = 'フォームに数値を入力し「判定して結果を表示」を押してください。';
 
   const tableEl = document.getElementById('breakdown-table');
   if (tableEl) tableEl.innerHTML = '';
@@ -847,6 +847,26 @@ function addHistoryRecord(data, score, comment) {
   saveHistoryData(history);
   renderHistoryTable();
   renderScoreChart();
+  showSaveToast();
+}
+
+// ===========================
+// 保存完了トースト
+// ===========================
+
+function showSaveToast(msg = '履歴に保存しました') {
+  const toast = document.getElementById('save-toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.remove('show');
+  // 次フレームで追加してトランジションを発火
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    });
+  });
 }
 
 /**
@@ -1181,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ヘルプボタン初期化
   initHelpButtons();
 
-  // ヒーロー・ヘッダーCTAのスムーズスクロール
+  // ヒーローCTAのスムーズスクロール（aタグ）
   document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {
       const target = document.querySelector(link.getAttribute('href'));
@@ -1191,6 +1211,65 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // ===========================
+  // ヘッダーCTA 状態管理
+  // ===========================
+  let isInputVisible = false;
+  let hasJudged = false;
+
+  function updateHeaderCta() {
+    const btn = document.getElementById('header-cta');
+    if (!btn) return;
+    if (hasJudged) {
+      btn.textContent = '結果を見る';
+      btn.dataset.action = 'see-result';
+      btn.classList.add('cta-action');
+    } else if (isInputVisible) {
+      btn.textContent = '判定する';
+      btn.dataset.action = 'judge';
+      btn.classList.add('cta-action');
+    } else {
+      btn.textContent = '入力フォームへ';
+      btn.dataset.action = 'goto-form';
+      btn.classList.remove('cta-action');
+    }
+  }
+
+  const inputSection = document.getElementById('input-section');
+  if (inputSection && 'IntersectionObserver' in window) {
+    const inputObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        isInputVisible = e.isIntersecting;
+        updateHeaderCta();
+      });
+    }, { threshold: 0.05 });
+    inputObserver.observe(inputSection);
+  }
+
+  const headerCta = document.getElementById('header-cta');
+  if (headerCta) {
+    headerCta.addEventListener('click', () => {
+      const action = headerCta.dataset.action;
+      if (action === 'goto-form') {
+        document.getElementById('input-section')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (action === 'judge') {
+        runJudgment(true);
+        hasJudged = true;
+        updateHeaderCta();
+        if (window.innerWidth < 900) {
+          setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
+        } else {
+          document.getElementById('result-panel-anchor')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else if (action === 'see-result') {
+        document.getElementById('result-panel-anchor')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
 
   // 判定後のスクロール（モバイル用）
   function scrollToResult() {
@@ -1203,19 +1282,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnJudge = document.getElementById('btn-judge');
   if (btnJudge) btnJudge.addEventListener('click', () => {
     runJudgment(true);
+    hasJudged = true;
+    updateHeaderCta();
     scrollToResult();
   });
   const btnReset = document.getElementById('btn-reset');
-  if (btnReset) btnReset.addEventListener('click', resetForm);
+  if (btnReset) btnReset.addEventListener('click', () => {
+    resetForm();
+    hasJudged = false;
+    updateHeaderCta();
+  });
 
   // 判定・リセットボタン（スマホ）
   const btnJudgeMobile = document.getElementById('btn-judge-mobile');
   if (btnJudgeMobile) btnJudgeMobile.addEventListener('click', () => {
     runJudgment(true);
+    hasJudged = true;
+    updateHeaderCta();
     scrollToResult();
   });
   const btnResetMobile = document.getElementById('btn-reset-mobile');
-  if (btnResetMobile) btnResetMobile.addEventListener('click', resetForm);
+  if (btnResetMobile) btnResetMobile.addEventListener('click', () => {
+    resetForm();
+    hasJudged = false;
+    updateHeaderCta();
+  });
 
   // 履歴ボタン
   const btnCompare = document.getElementById('btn-compare');

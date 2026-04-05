@@ -17,7 +17,7 @@
         <span class="logo-text">需給モニター</span>
       </div>
       <span id="current-date" class="header-date"></span>
-      <a href="#input-section" class="header-cta">今すぐ判定</a>
+      <button id="header-cta" class="header-cta" data-action="goto-form">入力フォームへ</button>
     </div>
   </header>
 
@@ -45,16 +45,17 @@
           <span class="hf-arrow">→</span>
           <div class="hero-step">
             <span class="hf-num">2</span>
-            <span class="hf-text">判定ボタンを押す</span>
+            <span class="hf-text">判定を実行</span>
           </div>
           <span class="hf-arrow">→</span>
           <div class="hero-step">
             <span class="hf-num">3</span>
-            <span class="hf-text">スコアと<br>コメントを確認</span>
+            <span class="hf-text">結果と履歴を<br>確認</span>
           </div>
         </div>
         <div class="hero-actions">
-          <a href="#input-section" class="hero-cta">今すぐ判定する →</a>
+          <a href="#input-section" class="hero-cta">入力フォームへ →</a>
+          <p class="hero-cta-hint">入力欄までスクロールします</p>
           <div class="hero-trust">
             <span class="trust-dot"></span><span>無料で使える</span>
             <span class="trust-dot"></span><span>登録不要</span>
@@ -351,9 +352,10 @@
 
       <!-- 判定ボタン（PC用） -->
       <div class="button-group" id="pc-button-group">
-        <button id="btn-judge" class="btn btn-primary">需給を判定する</button>
+        <button id="btn-judge" class="btn btn-primary">判定して結果を表示</button>
         <button id="btn-reset" class="btn btn-secondary">リセット</button>
       </div>
+      <p class="btn-hint">スコアを計算し、結果を表示して履歴に保存します</p>
 
     </section>
 
@@ -413,7 +415,7 @@
         <div class="comment-box">
           <div class="comment-label">朝の地合いメモ</div>
           <div class="comment-text" id="comment-text">
-            フォームに数値を入力し「需給を判定する」を押してください。
+            フォームに数値を入力し「判定して結果を表示」を押してください。
           </div>
         </div>
 
@@ -523,7 +525,7 @@
       </div>
 
       <div class="history-empty" id="history-empty">
-        まだ履歴がありません。「需給を判定する」を実行すると自動保存されます。
+        まだ履歴がありません。「判定して結果を表示」を実行すると自動保存されます。
       </div>
 
       <!-- 履歴カードグリッド -->
@@ -545,9 +547,12 @@
 
   <!-- スマホ用スティッキーバー -->
   <div class="mobile-bar" id="mobile-bar">
-    <button id="btn-judge-mobile" class="btn-mobile-judge">需給を判定する</button>
+    <button id="btn-judge-mobile" class="btn-mobile-judge">判定して結果を表示</button>
     <button id="btn-reset-mobile" class="btn-mobile-reset">リセット</button>
   </div>
+
+  <!-- 保存完了トースト -->
+  <div id="save-toast" class="save-toast" aria-live="polite" aria-atomic="true"></div>
 
   <script src="script.js"></script>
 </body>

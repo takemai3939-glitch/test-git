@@ -123,16 +123,35 @@ a:visited { color: inherit; }
   display: inline-flex;
   align-items: center;
   padding: 7px 18px;
-  background: var(--accent);
-  color: #fff;
-  text-decoration: none;
+  background: transparent;
+  border: 1px solid rgba(99,102,241,0.5);
+  color: #a5b4fc;
   border-radius: 20px;
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
-  transition: opacity 0.2s, transform 0.15s;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
-.header-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+.header-cta:hover {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.8);
+  color: #c7d2fe;
+  transform: translateY(-1px);
+}
+/* 判定する / 結果を見る 状態 */
+.header-cta.cta-action {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+}
+.header-cta.cta-action:hover {
+  box-shadow: 0 6px 22px rgba(99,102,241,0.55);
+  transform: translateY(-1px);
+  color: #fff;
+}
 
 /* ===========================
    ヒーローセクション — デスクトップ2カラム
@@ -345,55 +364,36 @@ a:visited { color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 17px 44px;
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 60%, #6366f1 100%);
-  background-size: 200% 100%;
-  color: #fff;
+  padding: 14px 36px;
+  background: rgba(99,102,241,0.08);
+  border: 1.5px solid rgba(99,102,241,0.55);
+  color: #a5b4fc;
   border-radius: 50px;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  box-shadow:
-    0 6px 32px rgba(99,102,241,0.45),
-    0 0 0 1px rgba(139,92,246,0.3) inset,
-    0 1px 0 rgba(255,255,255,0.15) inset;
-  transition: transform 0.22s, box-shadow 0.22s, background-position 0.4s;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: background 0.22s, border-color 0.22s, color 0.22s, transform 0.18s, box-shadow 0.22s;
   white-space: nowrap;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-}
-/* 光走りアニメーション */
-.hero-cta::after {
-  content: '';
-  position: absolute;
-  top: -20%;
-  left: -80%;
-  width: 50%;
-  height: 140%;
-  background: linear-gradient(105deg,
-    transparent 0%,
-    rgba(255,255,255,0.18) 50%,
-    transparent 100%);
-  transform: skewX(-12deg);
-  animation: cta-shine 3.6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes cta-shine {
-  0%        { left: -80%; opacity: 0; }
-  10%       { opacity: 1; }
-  40%, 100% { left: 160%; opacity: 0; }
 }
 .hero-cta:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 14px 44px rgba(99,102,241,0.60),
-    0 0 0 1px rgba(139,92,246,0.4) inset,
-    0 1px 0 rgba(255,255,255,0.2) inset;
-  background-position: 100% 0;
-  color: #fff;
+  background: rgba(99,102,241,0.16);
+  border-color: rgba(99,102,241,0.85);
+  color: #c7d2fe;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99,102,241,0.22);
 }
 .hero-cta:active { transform: scale(0.97); }
+
+/* CTA補足テキスト */
+.hero-cta-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  margin-top: -4px;
+  width: 100%;
+}
 
 /* 信頼要素 */
 .hero-trust {
@@ -932,14 +932,41 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
 .btn:active { transform: scale(0.97); }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+  box-shadow:
+    0 6px 24px rgba(34,197,94,0.40),
+    0 0 0 1px rgba(34,197,94,0.25) inset,
+    0 1px 0 rgba(255,255,255,0.18) inset;
+  position: relative;
+  overflow: hidden;
+  font-size: 16px;
+  padding: 16px 24px;
+  letter-spacing: 0.02em;
+}
+/* 光走り */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -20%; left: -70%;
+  width: 45%; height: 140%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.20), transparent);
+  transform: skewX(-12deg);
+  animation: judge-shine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes judge-shine {
+  0%        { left: -70%; opacity: 0; }
+  8%        { opacity: 1; }
+  38%, 100% { left: 150%; opacity: 0; }
 }
 .btn-primary:hover {
-  opacity: 0.92;
-  box-shadow: 0 6px 28px rgba(99,102,241,0.5);
-  transform: translateY(-1px);
+  box-shadow:
+    0 10px 32px rgba(34,197,94,0.55),
+    0 0 0 1px rgba(34,197,94,0.35) inset,
+    0 1px 0 rgba(255,255,255,0.22) inset;
+  transform: translateY(-2px);
+  opacity: 1;
 }
 
 .btn-secondary {
@@ -950,6 +977,44 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
 .btn-secondary:hover {
   border-color: var(--text-secondary);
   color: var(--text-primary);
+}
+
+/* ボタン下補足テキスト */
+.btn-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* 保存完了トースト */
+.save-toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: rgba(10,10,20,0.96);
+  border: 1px solid rgba(74,222,128,0.35);
+  color: #4ade80;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,222,128,0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.save-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* タグバッジ */
@@ -1707,15 +1772,16 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
 .btn-mobile-judge {
   flex: 1;
   padding: 15px 20px;
-  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #fff;
   border: none;
   border-radius: var(--radius);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
-  letter-spacing: 0.03em;
-  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 16px rgba(34,197,94,0.35);
+  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
   font-family: inherit;
 }
 .btn-mobile-judge:active { transform: scale(0.98); opacity: 0.9; }
