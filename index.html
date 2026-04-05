@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日本株需給モニター</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-title">日本株需給モニター</div>
+    <span id="current-date"></span>
+  </header>
+
+  <main class="dashboard">
+    <!-- 左カラム: 入力パネル -->
+    <section class="input-panel">
+
+      <!-- カード1: 外部環境 -->
+      <div class="card">
+        <div class="card-title">外部環境</div>
+        <div class="input-grid">
+          <div class="input-item">
+            <label for="vix">VIX</label>
+            <input type="number" id="vix" step="0.1" placeholder="例: 19.5">
+          </div>
+          <div class="input-item">
+            <label for="usdjpy">USD/JPY</label>
+            <input type="number" id="usdjpy" step="0.01" placeholder="例: 149.80">
+          </div>
+          <div class="input-item">
+            <label for="us10y">米10年債利回り (%)</label>
+            <input type="number" id="us10y" step="0.01" placeholder="例: 4.25">
+          </div>
+          <div class="input-item">
+            <label for="nasdaq">NASDAQ 騰落率 (%)</label>
+            <input type="number" id="nasdaq" step="0.01" placeholder="例: 0.85">
+          </div>
+          <div class="input-item">
+            <label for="sp500">S&amp;P500 騰落率 (%)</label>
+            <input type="number" id="sp500" step="0.01" placeholder="例: 0.60">
+          </div>
+          <div class="input-item">
+            <label for="nikkei-futures">日経先物 騰落率 (%)</label>
+            <input type="number" id="nikkei-futures" step="0.01" placeholder="例: 0.40">
+          </div>
+        </div>
+      </div>
+
+      <!-- カード2: 内部指標 -->
+      <div class="card">
+        <div class="card-title">内部指標</div>
+        <div class="input-grid">
+          <div class="input-item">
+            <label for="advances">値上がり銘柄数</label>
+            <input type="number" id="advances" placeholder="例: 1150">
+          </div>
+          <div class="input-item">
+            <label for="declines">値下がり銘柄数</label>
+            <input type="number" id="declines" placeholder="例: 680">
+          </div>
+          <div class="input-item">
+            <label for="volume">売買代金 <span class="input-hint">兆円</span></label>
+            <input type="number" id="volume" step="0.1" placeholder="例: 3.8">
+          </div>
+          <div class="input-item">
+            <label for="short-ratio">空売り比率 (%)</label>
+            <input type="number" id="short-ratio" step="0.1" placeholder="例: 44.5">
+          </div>
+          <div class="input-item">
+            <label for="toko-rachi">騰落レシオ</label>
+            <input type="number" id="toko-rachi" step="0.1" placeholder="例: 102.0">
+          </div>
+          <div class="input-item">
+            <label for="margin-pl">信用評価損益率 (%)</label>
+            <input type="number" id="margin-pl" step="0.1" placeholder="例: -9.5">
+          </div>
+          <div class="input-item">
+            <label for="foreign-flow">海外投資家フロー <span class="input-hint">億円</span></label>
+            <input type="number" id="foreign-flow" placeholder="例: 350">
+          </div>
+        </div>
+      </div>
+
+      <!-- カード3: イベント -->
+      <div class="card">
+        <div class="card-title">イベント</div>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="boj-event">
+            <span class="checkbox-custom"></span>
+            日銀イベントあり
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="fomc-event">
+            <span class="checkbox-custom"></span>
+            FOMC・CPI等 重要イベントあり
+          </label>
+        </div>
+      </div>
+
+      <!-- カード4: ニュース・メモ -->
+      <div class="card">
+        <div class="card-title">ニュース・メモ</div>
+        <div class="input-item">
+          <label for="news-memo">ニュースメモ</label>
+          <textarea id="news-memo" rows="3" placeholder="本日の主要ニュースや市場コメントを入力..."></textarea>
+        </div>
+        <div class="input-item" style="margin-top: 12px;">
+          <label for="trump-memo">トランプ・地政学メモ</label>
+          <textarea id="trump-memo" rows="3" placeholder="トランプ発言・地政学リスク等を入力..."></textarea>
+        </div>
+      </div>
+
+      <!-- ボタン -->
+      <div class="button-group">
+        <button id="btn-judge" class="btn btn-primary">需給を判定する</button>
+        <button id="btn-reset" class="btn btn-secondary">リセット</button>
+      </div>
+
+    </section>
+
+    <!-- 右カラム: 結果パネル -->
+    <section class="result-panel">
+      <div class="card result-card">
+        <div class="card-title">需給判定結果</div>
+
+        <!-- スコア表示 -->
+        <div class="score-display">
+          <span id="score-value" class="score-value">--</span>
+          <span class="score-label">/ 100</span>
+        </div>
+
+        <!-- スコアバー -->
+        <div class="score-bar-container">
+          <div class="score-bar" id="score-bar"></div>
+        </div>
+
+        <!-- 判定ラベル -->
+        <div class="judgment" id="judgment-label">--</div>
+
+        <!-- メタグリッド -->
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">アラートレベル</div>
+            <div class="meta-value" id="alert-level">--</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">リスク分類</div>
+            <div class="meta-value" id="risk-classification">--</div>
+          </div>
+        </div>
+
+        <!-- コメントボックス -->
+        <div class="comment-box">
+          <div class="comment-label">判定コメント</div>
+          <div class="comment-text" id="comment-text">判定ボタンを押すとコメントが表示されます。</div>
+        </div>
+
+        <!-- ブレークダウンテーブル -->
+        <div class="breakdown-section">
+          <div class="breakdown-title">指標別寄与度</div>
+          <div id="breakdown-table"></div>
+        </div>
+
+        <!-- キーワードアラート -->
+        <div id="keyword-alerts" style="display:none">
+          <div class="keyword-title">検出キーワード</div>
+          <div id="keyword-tags"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
