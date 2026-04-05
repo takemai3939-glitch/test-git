@@ -827,7 +827,10 @@ function updateResultUI(score, breakdown, eventPenalty, comment, data) {
     }
   }
 
-  // 7. キーワードアラートを更新
+  // 7. スコアスペクトラムを更新
+  updateScoreSpectrum(score);
+
+  // 8. キーワードアラートを更新
   const allText = (data.newsMemo || '') + ' ' + (data.trumpMemo || '');
   const keywords = detectKeywords(allText);
 
@@ -846,6 +849,44 @@ function updateResultUI(score, breakdown, eventPenalty, comment, data) {
   } else if (keywordAlertsEl) {
     keywordAlertsEl.style.display = 'none';
   }
+}
+
+// ===========================
+// ヘルプボタン初期化
+// ===========================
+
+/**
+ * フィールドの ? ボタンをクリックで対応する help-text を開閉する
+ */
+function initHelpButtons() {
+  document.querySelectorAll('.help-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const helpEl = document.getElementById(targetId);
+      if (!helpEl) return;
+
+      const isHidden = helpEl.hidden;
+      helpEl.hidden = !isHidden;
+      btn.classList.toggle('active', !isHidden ? false : true);
+    });
+  });
+}
+
+// ===========================
+// スコアスペクトラム ハイライト
+// ===========================
+
+/**
+ * スコアに対応するバンドをアクティブにする
+ * @param {number} score 0–100
+ */
+function updateScoreSpectrum(score) {
+  const bands = document.querySelectorAll('.spectrum-band');
+  bands.forEach(band => {
+    const min = parseInt(band.getAttribute('data-min'), 10);
+    const max = parseInt(band.getAttribute('data-max'), 10);
+    band.classList.toggle('active', score >= min && score <= max);
+  });
 }
 
 // ===========================
@@ -1392,6 +1433,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 日付表示を初期化し、1分ごとに更新
   updateDate();
   setInterval(updateDate, 60000);
+
+  // ── ヘルプボタン初期化 ──
+  initHelpButtons();
 
   // ── 使い方ガイドバナー（初回のみ表示） ──
   const GUIDE_DISMISSED_KEY = 'japan-stock-monitor-guide-v1';
