@@ -24,33 +24,78 @@
   <!-- ===== ヒーロー ===== -->
   <section class="hero-section">
     <div class="hero-inner">
-      <div class="hero-badge">日本株 需給判定ツール &nbsp;|&nbsp; 無料 &nbsp;|&nbsp; 登録不要</div>
-      <h1 class="hero-headline">
-        今日の日本株、<br>
-        <span class="ha-green">強い</span>か<span class="ha-red">弱い</span>か<br>
-        <span class="ha-blue">5秒で判断</span>
-      </h1>
-      <p class="hero-sub">
-        VIX・ドル円・日経先物・騰落比率など<strong>12指標を統合</strong>したスコアで、<br class="hero-br">
-        今日の相場の地合いを <strong>0〜100点</strong> で数値化します
-      </p>
-      <div class="hero-flow">
-        <div class="hero-step">
-          <span class="hf-num">1</span>
-          <span class="hf-text">指標を入力<span class="hf-note">全部埋めなくてOK</span></span>
+
+      <!-- 左カラム: テキスト訴求 -->
+      <div class="hero-content">
+        <div class="hero-badge">日本株 需給判定ツール &nbsp;|&nbsp; 無料 &nbsp;|&nbsp; 登録不要</div>
+        <h1 class="hero-headline">
+          今日の日本株、<br>
+          <span class="ha-green">強い</span>か<span class="ha-red">弱い</span>か<br>
+          <span class="ha-blue">5秒で判断</span>
+        </h1>
+        <p class="hero-sub">
+          VIX・ドル円・日経先物・騰落比率など<strong>12指標を統合</strong>したスコアで、<br class="hero-br">
+          今日の相場の地合いを <strong>0〜100点</strong> で数値化します
+        </p>
+        <div class="hero-flow">
+          <div class="hero-step">
+            <span class="hf-num">1</span>
+            <span class="hf-text">指標を入力<span class="hf-note">全部埋めなくてOK</span></span>
+          </div>
+          <span class="hf-arrow">→</span>
+          <div class="hero-step">
+            <span class="hf-num">2</span>
+            <span class="hf-text">判定ボタンを押す</span>
+          </div>
+          <span class="hf-arrow">→</span>
+          <div class="hero-step">
+            <span class="hf-num">3</span>
+            <span class="hf-text">スコアと<br>コメントを確認</span>
+          </div>
         </div>
-        <span class="hf-arrow">→</span>
-        <div class="hero-step">
-          <span class="hf-num">2</span>
-          <span class="hf-text">判定ボタンを押す</span>
-        </div>
-        <span class="hf-arrow">→</span>
-        <div class="hero-step">
-          <span class="hf-num">3</span>
-          <span class="hf-text">スコアと<br>コメントを確認</span>
+        <div class="hero-actions">
+          <a href="#input-section" class="hero-cta">今すぐ判定する →</a>
+          <div class="hero-trust">
+            <span class="trust-dot"></span><span>無料で使える</span>
+            <span class="trust-dot"></span><span>登録不要</span>
+            <span class="trust-dot"></span><span>毎朝30秒</span>
+          </div>
         </div>
       </div>
-      <a href="#input-section" class="hero-cta">今すぐ判定する →</a>
+
+      <!-- 右カラム: 判定結果プレビュー（デスクトップのみ表示） -->
+      <div class="hero-preview" aria-hidden="true">
+        <div class="hero-preview-card">
+          <div class="hpc-header">
+            <span class="hpc-title">需給スコア</span>
+            <span class="hpc-sample">判定イメージ</span>
+          </div>
+          <!-- SVGリング: r=42, 周長=263.9, 72%表示→offset=73.9 -->
+          <div class="hpc-ring-wrap">
+            <svg class="hpc-ring" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="hpc-ring-bg"   cx="50" cy="50" r="42"/>
+              <circle class="hpc-ring-fill" cx="50" cy="50" r="42"/>
+            </svg>
+            <div class="hpc-score-center">
+              <span class="hpc-score">72</span>
+              <span class="hpc-unit">/100</span>
+            </div>
+          </div>
+          <div class="hpc-judgment">強め</div>
+          <div class="hpc-metrics">
+            <div class="hpc-metric"><span class="hpc-m-label">VIX</span><span class="hpc-m-val">19.5</span></div>
+            <div class="hpc-metric"><span class="hpc-m-label">日経先物</span><span class="hpc-m-val pos">+0.4%</span></div>
+            <div class="hpc-metric"><span class="hpc-m-label">ドル円</span><span class="hpc-m-val">149.8</span></div>
+            <div class="hpc-metric"><span class="hpc-m-label">騰落比率</span><span class="hpc-m-val pos">63%</span></div>
+            <div class="hpc-metric"><span class="hpc-m-label">空売り比率</span><span class="hpc-m-val">44.5%</span></div>
+            <div class="hpc-metric"><span class="hpc-m-label">海外フロー</span><span class="hpc-m-val pos">+350億</span></div>
+          </div>
+          <div class="hpc-comment">
+            米国株堅調・VIX低水準で外部環境良好。<strong>【総括】やや強めの需給環境。</strong>強気目線を維持しつつリスク管理を。
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
