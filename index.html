@@ -3,41 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0e0e14">
-  <title>日本株需給モニター</title>
+  <meta name="theme-color" content="#080811">
+  <title>日本株需給モニター — 5秒で地合いを可視化</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ヘッダー -->
+  <!-- ===== ヘッダー（スティッキー） ===== -->
   <header class="app-header">
-    <div class="app-title">日本株需給モニター</div>
-    <span id="current-date"></span>
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="logo-mark"></span>
+        <span class="logo-text">需給モニター</span>
+      </div>
+      <span id="current-date" class="header-date"></span>
+      <a href="#input-section" class="header-cta">今すぐ判定</a>
+    </div>
   </header>
 
-  <!-- ヒーローバナー（初回のみ。localStorage管理） -->
-  <div class="hero-banner" id="guide-banner">
+  <!-- ===== ヒーロー ===== -->
+  <section class="hero-section">
     <div class="hero-inner">
-      <div class="hero-body">
-        <p class="hero-headline">
-          VIX・先物・需給データを入力するだけで、今日の日本株の地合いを
-          <strong class="hero-accent">100点満点でスコア化</strong>するツールです。
-        </p>
-        <div class="hero-steps">
-          <div class="hero-step"><span class="hs-num">①</span><span>数値を入力</span><span class="hs-note">全部埋めなくてOK</span></div>
-          <span class="hs-arrow">→</span>
-          <div class="hero-step"><span class="hs-num">②</span><span>判定ボタンを押す</span></div>
-          <span class="hs-arrow">→</span>
-          <div class="hero-step"><span class="hs-num">③</span><span>スコアとコメントを確認</span></div>
+      <div class="hero-badge">日本株 需給判定ツール &nbsp;|&nbsp; 無料 &nbsp;|&nbsp; 登録不要</div>
+      <h1 class="hero-headline">
+        今日の日本株、<br>
+        <span class="ha-green">強い</span>か<span class="ha-red">弱い</span>か<br>
+        <span class="ha-blue">5秒で判断</span>
+      </h1>
+      <p class="hero-sub">
+        VIX・ドル円・日経先物・騰落比率など<strong>12指標を統合</strong>したスコアで、<br class="hero-br">
+        今日の相場の地合いを <strong>0〜100点</strong> で数値化します
+      </p>
+      <div class="hero-flow">
+        <div class="hero-step">
+          <span class="hf-num">1</span>
+          <span class="hf-text">指標を入力<span class="hf-note">全部埋めなくてOK</span></span>
+        </div>
+        <span class="hf-arrow">→</span>
+        <div class="hero-step">
+          <span class="hf-num">2</span>
+          <span class="hf-text">判定ボタンを押す</span>
+        </div>
+        <span class="hf-arrow">→</span>
+        <div class="hero-step">
+          <span class="hf-num">3</span>
+          <span class="hf-text">スコアと<br>コメントを確認</span>
         </div>
       </div>
-      <button class="hero-close" id="guide-close" aria-label="閉じる">分かった ✕</button>
+      <a href="#input-section" class="hero-cta">今すぐ判定する →</a>
     </div>
-  </div>
+  </section>
 
-  <main class="dashboard">
+  <!-- ===== アプリ本体 ===== -->
+  <div class="app-main" id="input-section">
 
-    <!-- ===== 入力パネル ===== -->
+    <!-- 入力パネル -->
     <section class="input-panel">
 
       <!-- STEP 01: 外部環境 -->
@@ -57,11 +77,9 @@
               <span class="range-badge">平常: 15–22</span>
               <button type="button" class="help-btn" data-target="help-vix" aria-label="VIXの説明">?</button>
             </div>
-            <input type="number" id="vix" inputmode="decimal" step="0.1"
-                   placeholder="例: 19.5" autocomplete="off">
+            <input type="number" id="vix" inputmode="decimal" step="0.1" placeholder="例: 19.5" autocomplete="off">
             <div class="help-text" id="help-vix" hidden>
-              <strong>米国市場の「恐怖指数」。</strong>株価の先行き不安を数値化したもの。
-              15以下:平静、20–25:やや警戒、35以上:危機水準。高いと機関投資家がリスク削減のために日本株を売りやすい。
+              <strong>米国市場の「恐怖指数」。</strong>15以下:平静、20–25:やや警戒、35以上:危機水準。高いほど機関投資家が日本株を売りやすい。
             </div>
           </div>
 
@@ -71,11 +89,9 @@
               <span class="range-badge">中立: 143–150円</span>
               <button type="button" class="help-btn" data-target="help-usdjpy" aria-label="ドル円の説明">?</button>
             </div>
-            <input type="number" id="usdjpy" inputmode="decimal" step="0.01"
-                   placeholder="例: 149.80" autocomplete="off">
+            <input type="number" id="usdjpy" inputmode="decimal" step="0.01" placeholder="例: 149.80" autocomplete="off">
             <div class="help-text" id="help-usdjpy" hidden>
-              <strong>円とドルの交換レート。</strong>円安（数字が大きい）は輸出企業の収益に有利で日経平均を押し上げやすい。
-              ただし155円超は政府・日銀の介入警戒が高まる。急激な円高は外需株の逆風。
+              <strong>円安（数字が大きい）</strong>は輸出企業の収益に有利で日経平均を押し上げやすい。155円超は介入警戒。急激な円高は外需株の逆風。
             </div>
           </div>
 
@@ -85,11 +101,9 @@
               <span class="range-badge">中立: 4.0–4.5</span>
               <button type="button" class="help-btn" data-target="help-us10y" aria-label="米10年金利の説明">?</button>
             </div>
-            <input type="number" id="us10y" inputmode="decimal" step="0.01"
-                   placeholder="例: 4.25" autocomplete="off">
+            <input type="number" id="us10y" inputmode="decimal" step="0.01" placeholder="例: 4.25" autocomplete="off">
             <div class="help-text" id="help-us10y" hidden>
-              <strong>米国の長期金利。</strong>上がるとグロース株（成長株）の割高感が増し売られやすくなる。
-              4.5%超は株式への圧力が強まる水準として市場で意識される。金利上昇は通常ドル高＝円安も伴う。
+              <strong>米国の長期金利。</strong>上がるとグロース株が売られやすくなる。4.5%超は株式への圧力が強まる水準として市場で意識される。
             </div>
           </div>
 
@@ -99,11 +113,9 @@
               <span class="range-badge">前日比</span>
               <button type="button" class="help-btn" data-target="help-nasdaq" aria-label="NASDAQの説明">?</button>
             </div>
-            <input type="number" id="nasdaq" inputmode="decimal" step="0.01"
-                   placeholder="例: +0.85" autocomplete="off">
+            <input type="number" id="nasdaq" inputmode="decimal" step="0.01" placeholder="例: +0.85" autocomplete="off">
             <div class="help-text" id="help-nasdaq" hidden>
-              <strong>米国ハイテク株指数の前日比(%)。</strong>東京エレクトロン・アドバンテストなど日本の半導体株と高い連動性がある。
-              プラスなら翌朝の日本ハイテクセクターへの追い風。±1%以内はノイズ範囲。
+              <strong>米国ハイテク株指数の前日比(%)。</strong>東京エレクトロン等の日本半導体株と高い連動性がある。±1%以内はノイズ範囲。
             </div>
           </div>
 
@@ -113,25 +125,21 @@
               <span class="range-badge">前日比</span>
               <button type="button" class="help-btn" data-target="help-sp500" aria-label="S&P500の説明">?</button>
             </div>
-            <input type="number" id="sp500" inputmode="decimal" step="0.01"
-                   placeholder="例: +0.60" autocomplete="off">
+            <input type="number" id="sp500" inputmode="decimal" step="0.01" placeholder="例: +0.60" autocomplete="off">
             <div class="help-text" id="help-sp500" hidden>
-              <strong>米国の代表的な株価指数（500社）の前日比(%)。</strong>市場全体のリスクセンチメントを示す。
-              NASDAQと方向が揃っているときは強いシグナル。どちらかが逆行している場合は要注意。
+              <strong>米国500社の株価指数の前日比(%)。</strong>市場全体のリスクセンチメントを示す。NASDAQと方向が揃うと強いシグナル。
             </div>
           </div>
 
           <div class="input-item">
             <div class="field-label-row">
-              <label for="nikkei-futures">日経先物騰落率 <span class="tag-imp">最重要</span></label>
+              <label for="nikkei-futures">日経先物 <span class="tag-imp">最重要</span></label>
               <span class="range-badge">前日比 %</span>
               <button type="button" class="help-btn" data-target="help-nikkei-futures" aria-label="日経先物の説明">?</button>
             </div>
-            <input type="number" id="nikkei-futures" inputmode="decimal" step="0.01"
-                   placeholder="例: +0.40" autocomplete="off">
+            <input type="number" id="nikkei-futures" inputmode="decimal" step="0.01" placeholder="例: +0.40" autocomplete="off">
             <div class="help-text" id="help-nikkei-futures" hidden>
-              <strong>翌朝の寄り付きに最も直結する指標。</strong>シンガポール(SGX)や大阪市場で夜間取引される日経225先物の前日比(%)。
-              CMEやSGXのナイトセッション終値を確認して入力する。プラスなら強い寄り付きを示唆。
+              <strong>翌朝の寄り付きに最も直結する指標。</strong>SGX・大阪市場の夜間先物の前日比(%)。CMEやSGXのナイトセッション終値を確認して入力する。
             </div>
           </div>
 
@@ -155,12 +163,9 @@
               <span class="range-badge">東証P 全約2000銘柄</span>
               <button type="button" class="help-btn" data-target="help-advances" aria-label="値上がり銘柄数の説明">?</button>
             </div>
-            <input type="number" id="advances" inputmode="numeric"
-                   placeholder="例: 1150" autocomplete="off">
+            <input type="number" id="advances" inputmode="numeric" placeholder="例: 1150" autocomplete="off">
             <div class="help-text" id="help-advances" hidden>
-              <strong>東証プライム上場の約2000銘柄のうち、前日終値より上昇した銘柄数。</strong>
-              値上がり÷(値上がり+値下がり)が70%以上なら「広範な上昇」、35%以下なら「全面安」と判断。
-              個別材料より相場全体の強さを示す。
+              前日終値より上昇した銘柄数。<strong>70%以上なら「広範な上昇」</strong>、35%以下なら「全面安」と判断。
             </div>
           </div>
 
@@ -170,11 +175,9 @@
               <span class="range-badge">東証P 全約2000銘柄</span>
               <button type="button" class="help-btn" data-target="help-declines" aria-label="値下がり銘柄数の説明">?</button>
             </div>
-            <input type="number" id="declines" inputmode="numeric"
-                   placeholder="例: 680" autocomplete="off">
+            <input type="number" id="declines" inputmode="numeric" placeholder="例: 680" autocomplete="off">
             <div class="help-text" id="help-declines" hidden>
-              前日終値より下落した銘柄数。値上がり・値下がりの両方を入力することで
-              <strong>騰落比率（相場の幅）</strong>を計算します。比率を判断材料にするため、両方入力してください。
+              前日終値より下落した銘柄数。値上がりと両方入力することで<strong>騰落比率</strong>を計算します。
             </div>
           </div>
 
@@ -184,12 +187,9 @@
               <span class="range-badge">目安: 3–4兆円/日</span>
               <button type="button" class="help-btn" data-target="help-volume" aria-label="売買代金の説明">?</button>
             </div>
-            <input type="number" id="volume" inputmode="decimal" step="0.1"
-                   placeholder="例: 3.8" autocomplete="off">
+            <input type="number" id="volume" inputmode="decimal" step="0.1" placeholder="例: 3.8" autocomplete="off">
             <div class="help-text" id="help-volume" hidden>
-              <strong>東証プライム全体の1日の売買金額（兆円）。</strong>3兆円以上が活況の目安。
-              2兆円以下は参加者が少なく、指数の方向感が出にくい閑散相場。
-              売買代金が多いと需給の存在感が強く、トレンドが継続しやすい。
+              東証プライム全体の1日の売買金額（兆円）。<strong>3兆円以上が活況の目安。</strong>2兆円以下は閑散相場。
             </div>
           </div>
 
@@ -199,12 +199,9 @@
               <span class="range-badge">中立: 43–47%</span>
               <button type="button" class="help-btn" data-target="help-short" aria-label="空売り比率の説明">?</button>
             </div>
-            <input type="number" id="short-ratio" inputmode="decimal" step="0.1"
-                   placeholder="例: 44.5" autocomplete="off">
+            <input type="number" id="short-ratio" inputmode="decimal" step="0.1" placeholder="例: 44.5" autocomplete="off">
             <div class="help-text" id="help-short" hidden>
-              <strong>全売買に占める空売り（株価下落を見込んだ売り）の割合(%)。</strong>
-              40%以下は強気センチメント、50%超は売り方優勢を示す。ただし高水準の空売りは
-              相場反転時の「踏み上げ（ショートスクイーズ）」の燃料にもなる。
+              全売買に占める空売りの割合。<strong>40%以下は強気センチメント</strong>、50%超は売り方優勢を示す。
             </div>
           </div>
 
@@ -214,12 +211,9 @@
               <span class="range-badge">中立: 85–120</span>
               <button type="button" class="help-btn" data-target="help-toko" aria-label="騰落レシオの説明">?</button>
             </div>
-            <input type="number" id="toko-rachi" inputmode="decimal" step="0.1"
-                   placeholder="例: 102.0" autocomplete="off">
+            <input type="number" id="toko-rachi" inputmode="decimal" step="0.1" placeholder="例: 102.0" autocomplete="off">
             <div class="help-text" id="help-toko" hidden>
-              <strong>過去25日間の「値上がり銘柄数合計 ÷ 値下がり銘柄数合計 × 100」。</strong>
-              120以上は過熱（買われすぎ・短期的な反落リスク）、70以下は売られすぎのサイン。
-              100が中立。株式情報サイトの「市場情報」ページで確認できる。
+              過去25日の値上がり÷値下がり×100。<strong>120以上は過熱（反落リスク）</strong>、70以下は売られすぎのサイン。100が中立。
             </div>
           </div>
 
@@ -229,12 +223,9 @@
               <span class="range-badge">中立: -10〜-5%</span>
               <button type="button" class="help-btn" data-target="help-margin" aria-label="信用評価損益率の説明">?</button>
             </div>
-            <input type="number" id="margin-pl" inputmode="decimal" step="0.1"
-                   placeholder="例: -9.5" autocomplete="off">
+            <input type="number" id="margin-pl" inputmode="decimal" step="0.1" placeholder="例: -9.5" autocomplete="off">
             <div class="help-text" id="help-margin" hidden>
-              <strong>信用取引（借金で株を買っている）投資家の平均的な含み損益率(%)。</strong>
-              -15%以下になると「追証（追加証拠金）」が発生し強制売りが出やすい。
-              極端に悪化した後は逆張りの反発シグナルにもなる二面性がある指標。
+              信用買い投資家の平均含み損益率。<strong>-15%以下は強制売りが出やすい。</strong>極端に悪化した後は逆張りシグナルにもなる。
             </div>
           </div>
 
@@ -244,12 +235,9 @@
               <span class="range-badge">中立: ±500億円</span>
               <button type="button" class="help-btn" data-target="help-flow" aria-label="海外投資家フローの説明">?</button>
             </div>
-            <input type="number" id="foreign-flow" inputmode="decimal"
-                   placeholder="例: +350（買越）、-1200（売越）" autocomplete="off">
+            <input type="number" id="foreign-flow" inputmode="decimal" placeholder="例: +350（買越）、-1200（売越）" autocomplete="off">
             <div class="help-text" id="help-flow" hidden>
-              <strong>外国人投資家の東証プライムでの売買差額（億円）。東証売買高の約65%は外国人。</strong>
-              プラスが買い越し（需給の追い風）、マイナスが売り越し（需給の逆風）。
-              週次で2000億円以上の買越が続くと強いリスクオンの証拠。
+              外国人投資家の売買差額（億円）。<strong>東証売買高の約65%は外国人</strong>のため最重要指標。プラスが買い越し。
             </div>
           </div>
 
@@ -295,21 +283,14 @@
           </div>
         </div>
         <div class="kw-hint-row">
-          <span class="kw-hint-label">検出ワード:</span>
-          <span class="kw-chip">トランプ</span>
-          <span class="kw-chip">関税</span>
-          <span class="kw-chip">半導体</span>
-          <span class="kw-chip">CPI</span>
-          <span class="kw-chip">雇用統計</span>
-          <span class="kw-chip">日銀</span>
-          <span class="kw-chip">円高</span>
-          <span class="kw-chip">円安</span>
-          <span class="kw-chip">中東</span>
-          <span class="kw-chip">台湾</span>
-          <span class="kw-chip">利下げ</span>
-          <span class="kw-chip">停戦</span>
-          <span class="kw-chip">インフレ</span>
-          <span class="kw-chip">中国</span>
+          <span class="kw-hint-label">検出:</span>
+          <span class="kw-chip">トランプ</span><span class="kw-chip">関税</span>
+          <span class="kw-chip">半導体</span><span class="kw-chip">CPI</span>
+          <span class="kw-chip">雇用統計</span><span class="kw-chip">日銀</span>
+          <span class="kw-chip">円高</span><span class="kw-chip">円安</span>
+          <span class="kw-chip">中東</span><span class="kw-chip">台湾</span>
+          <span class="kw-chip">利下げ</span><span class="kw-chip">停戦</span>
+          <span class="kw-chip">インフレ</span><span class="kw-chip">中国</span>
         </div>
         <div class="input-item">
           <label for="news-memo">ニュースメモ</label>
@@ -323,7 +304,7 @@
         </div>
       </div>
 
-      <!-- ボタン（PC表示用） -->
+      <!-- 判定ボタン（PC用） -->
       <div class="button-group" id="pc-button-group">
         <button id="btn-judge" class="btn btn-primary">需給を判定する</button>
         <button id="btn-reset" class="btn btn-secondary">リセット</button>
@@ -331,34 +312,36 @@
 
     </section>
 
-    <!-- ===== 結果パネル ===== -->
+    <!-- 結果パネル -->
     <section class="result-panel" id="result-panel-anchor">
-      <div class="card result-card">
-        <div class="card-title">需給判定結果</div>
+      <div class="card result-card" id="result-card">
 
-        <!-- スコア数値 -->
-        <div class="score-display">
-          <span id="score-value" class="score-value">--</span>
-          <span class="score-label">/ 100</span>
+        <div class="result-card-title">需給判定結果</div>
+
+        <!-- スコアリング（SVGリング） -->
+        <div class="score-ring-wrap">
+          <svg class="score-ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg"   cx="60" cy="60" r="52"/>
+            <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="score-center">
+            <span id="score-value" class="score-value">--</span>
+            <span class="score-unit">/100</span>
+          </div>
         </div>
 
-        <!-- スコアバー -->
-        <div class="score-bar-container">
-          <div class="score-bar" id="score-bar"></div>
-        </div>
-
-        <!-- スコアスペクトル（5段階の常時表示ゲージ） -->
+        <!-- スコアスペクトラム（5段階） -->
         <div class="score-spectrum">
-          <div class="spectrum-band ss-very-weak" data-min="0"  data-max="19">
+          <div class="spectrum-band ss-very-weak"  data-min="0"  data-max="19">
             <span class="ss-label">とても弱い</span><span class="ss-range">0–19</span>
           </div>
-          <div class="spectrum-band ss-weak"      data-min="20" data-max="39">
+          <div class="spectrum-band ss-weak"        data-min="20" data-max="39">
             <span class="ss-label">弱め</span><span class="ss-range">20–39</span>
           </div>
-          <div class="spectrum-band ss-neutral"   data-min="40" data-max="59">
+          <div class="spectrum-band ss-neutral"     data-min="40" data-max="59">
             <span class="ss-label">中立</span><span class="ss-range">40–59</span>
           </div>
-          <div class="spectrum-band ss-strong"    data-min="60" data-max="79">
+          <div class="spectrum-band ss-strong"      data-min="60" data-max="79">
             <span class="ss-label">強め</span><span class="ss-range">60–79</span>
           </div>
           <div class="spectrum-band ss-very-strong" data-min="80" data-max="100">
@@ -367,7 +350,7 @@
         </div>
 
         <!-- 判定ラベル -->
-        <div class="judgment" id="judgment-label">--</div>
+        <div class="judgment" id="judgment-label">判定待ち</div>
 
         <!-- メタ情報 -->
         <div class="meta-grid">
@@ -385,7 +368,7 @@
         <div class="comment-box">
           <div class="comment-label">朝の地合いメモ</div>
           <div class="comment-text" id="comment-text">
-            左のフォームに数値を入力し「需給を判定する」を押してください。
+            フォームに数値を入力し「需給を判定する」を押してください。
           </div>
         </div>
 
@@ -395,15 +378,15 @@
           <div id="keyword-tags"></div>
         </div>
 
-        <!-- 指標別寄与度（折りたたみ） -->
+        <!-- 指標別寄与度 -->
         <details class="breakdown-details">
-          <summary class="breakdown-summary">指標別寄与度</summary>
+          <summary class="breakdown-summary">指標別寄与度を確認する</summary>
           <div class="breakdown-section">
             <div id="breakdown-table"></div>
           </div>
         </details>
 
-        <!-- スコアの読み方ガイド（折りたたみ） -->
+        <!-- スコアの読み方 -->
         <details class="interp-guide">
           <summary class="interp-summary">スコアの読み方・活用方法</summary>
           <div class="interp-rows">
@@ -439,7 +422,7 @@
               <div class="interp-badge ss-very-weak">0–19</div>
               <div class="interp-content">
                 <div class="interp-title very-weak">かなり弱い需給</div>
-                <div class="interp-desc">リスク回避優先。ポジション圧縮、ショートまたは完全キャッシュも検討。</div>
+                <div class="interp-desc">リスク回避優先。ポジション圧縮、完全キャッシュも検討。</div>
               </div>
             </div>
           </div>
@@ -448,63 +431,74 @@
       </div>
     </section>
 
-  </main>
+  </div><!-- /.app-main -->
+
+  <!-- ===== このツールについて ===== -->
+  <section class="about-section">
+    <div class="section-inner">
+      <h2 class="section-heading">このツールについて</h2>
+      <div class="about-grid">
+        <div class="about-card">
+          <div class="about-icon-badge">分析</div>
+          <div class="about-title">何をしているか</div>
+          <div class="about-body">VIX・ドル円・日経先物・騰落比率など12種類の市場指標に根拠ある重み付けを行い、日本株の需給環境を0〜100点でスコア化します。外部環境と内部指標の乖離も自動検出します。</div>
+        </div>
+        <div class="about-card">
+          <div class="about-icon-badge">使い方</div>
+          <div class="about-title">どう使うか</div>
+          <div class="about-body">毎朝の市場開始前（8:30〜9:00頃）に各指標を入力し「判定」ボタンを押すだけ。全項目入力しなくても動作します。スコアと判定コメントを参考に当日のポジション方針を決めます。</div>
+        </div>
+        <div class="about-card">
+          <div class="about-icon-badge">注意</div>
+          <div class="about-title">注意点</div>
+          <div class="about-body">本ツールは参考情報の提供を目的としており、特定の投資行動を推奨するものではありません。投資の最終判断はご自身の責任で行ってください。過去の需給状況との比較に「履歴機能」をご活用ください。</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ===== 履歴・比較セクション ===== -->
   <section class="history-section" id="history-section">
+    <div class="section-inner">
 
-    <div class="history-header">
-      <div class="history-title">
-        <span>需給スコア履歴</span>
-        <span class="history-count" id="history-count">0件</span>
+      <div class="history-header">
+        <div class="history-title-wrap">
+          <h2 class="section-heading">需給スコア履歴</h2>
+          <span class="history-count" id="history-count">0件</span>
+        </div>
+        <div class="history-actions">
+          <button class="btn-history btn-compare" id="btn-compare" disabled>選択した2件を比較</button>
+          <button class="btn-history btn-clear-history" id="btn-clear-history">全削除</button>
+        </div>
       </div>
-      <div class="history-actions">
-        <button class="btn-history btn-compare" id="btn-compare" disabled>選択した2件を比較</button>
-        <button class="btn-history btn-clear-history" id="btn-clear-history">履歴を全削除</button>
+
+      <div class="chart-wrap" id="chart-wrap" style="display:none">
+        <div class="chart-label">スコア推移チャート</div>
+        <canvas id="score-chart"></canvas>
       </div>
-    </div>
 
-    <div class="chart-wrap" id="chart-wrap" style="display:none">
-      <div class="chart-label">スコア推移</div>
-      <canvas id="score-chart"></canvas>
-    </div>
-
-    <div class="history-table-wrap">
       <div class="history-empty" id="history-empty">
         まだ履歴がありません。「需給を判定する」を実行すると自動保存されます。
       </div>
-      <div class="history-table-scroll" id="history-table-scroll" style="display:none">
-        <table class="history-table" id="history-table">
-          <thead>
-            <tr>
-              <th class="col-check"></th>
-              <th class="col-date">日付・時刻</th>
-              <th class="col-score">スコア</th>
-              <th class="col-judgment">判定</th>
-              <th class="col-vix">VIX</th>
-              <th class="col-usdjpy">ドル円</th>
-              <th class="col-futures">日経先物</th>
-              <th class="col-adv">騰落比</th>
-              <th class="col-memo">メモ</th>
-              <th class="col-action">操作</th>
-            </tr>
-          </thead>
-          <tbody id="history-tbody"></tbody>
-        </table>
-      </div>
-    </div>
 
-    <div class="comparison-panel" id="comparison-panel" style="display:none">
-      <div class="comparison-header">
-        <div class="comparison-title">比較結果</div>
-        <button class="btn-close-comparison" id="btn-close-comparison">✕ 閉じる</button>
+      <!-- 履歴カードグリッド -->
+      <div class="history-cards-wrap" id="history-table-scroll" style="display:none">
+        <div class="history-cards" id="history-tbody"></div>
       </div>
-      <div class="comparison-body" id="comparison-body"></div>
-    </div>
 
+      <!-- 比較パネル -->
+      <div class="comparison-panel" id="comparison-panel" style="display:none">
+        <div class="comparison-header">
+          <div class="comparison-title">比較結果</div>
+          <button class="btn-close-comparison" id="btn-close-comparison">✕ 閉じる</button>
+        </div>
+        <div class="comparison-body" id="comparison-body"></div>
+      </div>
+
+    </div>
   </section>
 
-  <!-- スマホ用スティッキーボタンバー -->
+  <!-- スマホ用スティッキーバー -->
   <div class="mobile-bar" id="mobile-bar">
     <button id="btn-judge-mobile" class="btn-mobile-judge">需給を判定する</button>
     <button id="btn-reset-mobile" class="btn-mobile-reset">リセット</button>
