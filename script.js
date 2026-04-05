@@ -1393,12 +1393,47 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDate();
   setInterval(updateDate, 60000);
 
-  // ── 判定・リセットボタン ──
+  // ── 使い方ガイドバナー（初回のみ表示） ──
+  const GUIDE_DISMISSED_KEY = 'japan-stock-monitor-guide-v1';
+  const guideBanner = document.getElementById('guide-banner');
+  if (guideBanner && localStorage.getItem(GUIDE_DISMISSED_KEY)) {
+    guideBanner.style.display = 'none';
+  }
+  const guideClose = document.getElementById('guide-close');
+  if (guideClose) {
+    guideClose.addEventListener('click', () => {
+      if (guideBanner) guideBanner.style.display = 'none';
+      localStorage.setItem(GUIDE_DISMISSED_KEY, '1');
+    });
+  }
+
+  // ── 判定後のスクロール（モバイル用） ──
+  function scrollToResult() {
+    if (window.innerWidth < 900) {
+      // モバイルでは結果パネルが上に来るのでトップへ
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
+    }
+  }
+
+  // ── 判定・リセットボタン（PC） ──
   const btnJudge = document.getElementById('btn-judge');
-  if (btnJudge) btnJudge.addEventListener('click', () => runJudgment(true));
+  if (btnJudge) btnJudge.addEventListener('click', () => {
+    runJudgment(true);
+    scrollToResult();
+  });
 
   const btnReset = document.getElementById('btn-reset');
   if (btnReset) btnReset.addEventListener('click', resetForm);
+
+  // ── 判定・リセットボタン（スマホ用スティッキーバー） ──
+  const btnJudgeMobile = document.getElementById('btn-judge-mobile');
+  if (btnJudgeMobile) btnJudgeMobile.addEventListener('click', () => {
+    runJudgment(true);
+    scrollToResult();
+  });
+
+  const btnResetMobile = document.getElementById('btn-reset-mobile');
+  if (btnResetMobile) btnResetMobile.addEventListener('click', resetForm);
 
   // ── 履歴ボタン ──
   const btnCompare = document.getElementById('btn-compare');

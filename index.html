@@ -2,136 +2,260 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0e0e14">
   <title>日本株需給モニター</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- ヘッダー -->
   <header class="app-header">
     <div class="app-title">日本株需給モニター</div>
     <span id="current-date"></span>
   </header>
 
+  <!-- 使い方ガイドバナー（初回のみ表示） -->
+  <div class="guide-banner" id="guide-banner">
+    <div class="guide-content">
+      <div class="guide-steps">
+        <div class="guide-step"><span class="guide-num">①</span>数値を入力</div>
+        <span class="guide-arrow">→</span>
+        <div class="guide-step"><span class="guide-num">②</span>判定ボタンを押す</div>
+        <span class="guide-arrow">→</span>
+        <div class="guide-step"><span class="guide-num">③</span>右側で結果を確認</div>
+      </div>
+      <p class="guide-sub">全項目の入力は不要です。わかる範囲だけで判定できます。</p>
+    </div>
+    <button class="guide-close" id="guide-close" aria-label="閉じる">✕</button>
+  </div>
+
   <main class="dashboard">
-    <!-- 左カラム: 入力パネル -->
+
+    <!-- ===== 入力パネル ===== -->
     <section class="input-panel">
 
-      <!-- カード1: 外部環境 -->
+      <!-- STEP 01: 外部環境 -->
       <div class="card">
-        <div class="card-title">外部環境</div>
+        <div class="card-header">
+          <span class="card-step">01</span>
+          <div class="card-header-text">
+            <div class="card-title">外部環境</div>
+            <div class="card-subtitle">前日の米国市場・先物の状況</div>
+          </div>
+        </div>
         <div class="input-grid">
+
           <div class="input-item">
-            <label for="vix">VIX</label>
-            <input type="number" id="vix" step="0.1" placeholder="例: 19.5">
+            <label for="vix">
+              VIX <span class="tag-imp">重要</span>
+              <span class="range-badge">平常: 15–22</span>
+            </label>
+            <input type="number" id="vix" inputmode="decimal" step="0.1"
+                   placeholder="例: 19.5" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="usdjpy">USD/JPY</label>
-            <input type="number" id="usdjpy" step="0.01" placeholder="例: 149.80">
+            <label for="usdjpy">
+              ドル円
+              <span class="range-badge">中立: 143–150円</span>
+            </label>
+            <input type="number" id="usdjpy" inputmode="decimal" step="0.01"
+                   placeholder="例: 149.80" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="us10y">米10年債利回り (%)</label>
-            <input type="number" id="us10y" step="0.01" placeholder="例: 4.25">
+            <label for="us10y">
+              米10年金利 <span class="unit-label">%</span>
+              <span class="range-badge">中立: 4.0–4.5</span>
+            </label>
+            <input type="number" id="us10y" inputmode="decimal" step="0.01"
+                   placeholder="例: 4.25" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="nasdaq">NASDAQ 騰落率 (%)</label>
-            <input type="number" id="nasdaq" step="0.01" placeholder="例: 0.85">
+            <label for="nasdaq">
+              NASDAQ騰落率 <span class="unit-label">%</span>
+              <span class="range-badge">前日比</span>
+            </label>
+            <input type="number" id="nasdaq" inputmode="decimal" step="0.01"
+                   placeholder="例: +0.85" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="sp500">S&amp;P500 騰落率 (%)</label>
-            <input type="number" id="sp500" step="0.01" placeholder="例: 0.60">
+            <label for="sp500">
+              S&amp;P500騰落率 <span class="unit-label">%</span>
+              <span class="range-badge">前日比</span>
+            </label>
+            <input type="number" id="sp500" inputmode="decimal" step="0.01"
+                   placeholder="例: +0.60" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="nikkei-futures">日経先物 騰落率 (%)</label>
-            <input type="number" id="nikkei-futures" step="0.01" placeholder="例: 0.40">
+            <label for="nikkei-futures">
+              日経先物騰落率 <span class="tag-imp">最重要</span>
+              <span class="range-badge">前日比 %</span>
+            </label>
+            <input type="number" id="nikkei-futures" inputmode="decimal" step="0.01"
+                   placeholder="例: +0.40" autocomplete="off">
           </div>
+
         </div>
       </div>
 
-      <!-- カード2: 内部指標 -->
+      <!-- STEP 02: 内部指標 -->
       <div class="card">
-        <div class="card-title">内部指標</div>
+        <div class="card-header">
+          <span class="card-step">02</span>
+          <div class="card-header-text">
+            <div class="card-title">内部指標</div>
+            <div class="card-subtitle">東証プライムの需給・センチメントデータ</div>
+          </div>
+        </div>
         <div class="input-grid">
+
           <div class="input-item">
-            <label for="advances">値上がり銘柄数</label>
-            <input type="number" id="advances" placeholder="例: 1150">
+            <label for="advances">
+              値上がり銘柄数
+              <span class="range-badge">東証P 全約2000銘柄</span>
+            </label>
+            <input type="number" id="advances" inputmode="numeric"
+                   placeholder="例: 1150" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="declines">値下がり銘柄数</label>
-            <input type="number" id="declines" placeholder="例: 680">
+            <label for="declines">
+              値下がり銘柄数
+              <span class="range-badge">東証P 全約2000銘柄</span>
+            </label>
+            <input type="number" id="declines" inputmode="numeric"
+                   placeholder="例: 680" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="volume">売買代金 <span class="input-hint">兆円</span></label>
-            <input type="number" id="volume" step="0.1" placeholder="例: 3.8">
+            <label for="volume">
+              売買代金 <span class="unit-label">兆円</span>
+              <span class="range-badge">目安: 3–4兆円/日</span>
+            </label>
+            <input type="number" id="volume" inputmode="decimal" step="0.1"
+                   placeholder="例: 3.8" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="short-ratio">空売り比率 (%)</label>
-            <input type="number" id="short-ratio" step="0.1" placeholder="例: 44.5">
+            <label for="short-ratio">
+              空売り比率 <span class="unit-label">%</span>
+              <span class="range-badge">中立: 43–47%</span>
+            </label>
+            <input type="number" id="short-ratio" inputmode="decimal" step="0.1"
+                   placeholder="例: 44.5" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="toko-rachi">騰落レシオ</label>
-            <input type="number" id="toko-rachi" step="0.1" placeholder="例: 102.0">
+            <label for="toko-rachi">
+              騰落レシオ（25日）
+              <span class="range-badge">中立: 85–120</span>
+            </label>
+            <input type="number" id="toko-rachi" inputmode="decimal" step="0.1"
+                   placeholder="例: 102.0" autocomplete="off">
           </div>
+
           <div class="input-item">
-            <label for="margin-pl">信用評価損益率 (%)</label>
-            <input type="number" id="margin-pl" step="0.1" placeholder="例: -9.5">
+            <label for="margin-pl">
+              信用評価損益率 <span class="unit-label">%</span>
+              <span class="range-badge">中立: -10〜-5%</span>
+            </label>
+            <input type="number" id="margin-pl" inputmode="decimal" step="0.1"
+                   placeholder="例: -9.5" autocomplete="off">
           </div>
-          <div class="input-item">
-            <label for="foreign-flow">海外投資家フロー <span class="input-hint">億円</span></label>
-            <input type="number" id="foreign-flow" placeholder="例: 350">
+
+          <div class="input-item input-item-full">
+            <label for="foreign-flow">
+              海外投資家フロー <span class="unit-label">億円</span>
+              <span class="range-badge">中立: ±500億円</span>
+            </label>
+            <input type="number" id="foreign-flow" inputmode="decimal"
+                   placeholder="例: 350（買越はプラス、売越はマイナス）" autocomplete="off">
           </div>
+
         </div>
       </div>
 
-      <!-- カード3: イベント -->
+      <!-- STEP 03: イベント -->
       <div class="card">
-        <div class="card-title">イベント</div>
+        <div class="card-header">
+          <span class="card-step">03</span>
+          <div class="card-header-text">
+            <div class="card-title">イベント</div>
+            <div class="card-subtitle">本日の重要スケジュール（スコアに -5点ペナルティ）</div>
+          </div>
+        </div>
         <div class="checkbox-group">
           <label class="checkbox-label">
             <input type="checkbox" id="boj-event">
             <span class="checkbox-custom"></span>
-            日銀イベントあり
+            <span class="checkbox-text">
+              日銀イベントあり
+              <span class="checkbox-hint">政策決定会合・総裁発言等</span>
+            </span>
           </label>
           <label class="checkbox-label">
             <input type="checkbox" id="fomc-event">
             <span class="checkbox-custom"></span>
-            FOMC・CPI等 重要イベントあり
+            <span class="checkbox-text">
+              FOMC・CPI等 重要イベントあり
+              <span class="checkbox-hint">米金融政策・主要経済指標の発表日</span>
+            </span>
           </label>
         </div>
       </div>
 
-      <!-- カード4: ニュース・メモ -->
+      <!-- STEP 04: ニュース -->
       <div class="card">
-        <div class="card-title">ニュース・メモ</div>
+        <div class="card-header">
+          <span class="card-step">04</span>
+          <div class="card-header-text">
+            <div class="card-title">ニュース・メモ</div>
+            <div class="card-subtitle">キーワード検出で判定コメントに自動反映</div>
+          </div>
+        </div>
+        <div class="kw-hint-row">
+          <span class="kw-hint-label">検出ワード:</span>
+          <span class="kw-chip">トランプ</span><span class="kw-chip">関税</span>
+          <span class="kw-chip">半導体</span><span class="kw-chip">CPI</span>
+          <span class="kw-chip">日銀</span><span class="kw-chip">円高/安</span>
+          <span class="kw-chip">中東</span><span class="kw-chip">台湾</span>
+          <span class="kw-chip">利下げ</span>
+        </div>
         <div class="input-item">
           <label for="news-memo">ニュースメモ</label>
-          <textarea id="news-memo" rows="3" placeholder="本日の主要ニュースや市場コメントを入力..."></textarea>
+          <textarea id="news-memo" rows="3"
+            placeholder="例: 半導体株が堅調。米国ではCPI発表を週内に控えている。"></textarea>
         </div>
-        <div class="input-item" style="margin-top: 12px;">
+        <div class="input-item" style="margin-top: 10px;">
           <label for="trump-memo">トランプ・地政学メモ</label>
-          <textarea id="trump-memo" rows="3" placeholder="トランプ発言・地政学リスク等を入力..."></textarea>
+          <textarea id="trump-memo" rows="2"
+            placeholder="例: 特段の発言なし。関税懸念は引き続き残存。"></textarea>
         </div>
       </div>
 
-      <!-- ボタン -->
-      <div class="button-group">
+      <!-- ボタン（PC表示用） -->
+      <div class="button-group" id="pc-button-group">
         <button id="btn-judge" class="btn btn-primary">需給を判定する</button>
         <button id="btn-reset" class="btn btn-secondary">リセット</button>
       </div>
 
     </section>
 
-    <!-- 右カラム: 結果パネル -->
-    <section class="result-panel">
+    <!-- ===== 結果パネル ===== -->
+    <section class="result-panel" id="result-panel-anchor">
       <div class="card result-card">
         <div class="card-title">需給判定結果</div>
 
-        <!-- スコア表示 -->
+        <!-- スコア -->
         <div class="score-display">
           <span id="score-value" class="score-value">--</span>
           <span class="score-label">/ 100</span>
         </div>
-
-        <!-- スコアバー -->
         <div class="score-bar-container">
           <div class="score-bar" id="score-bar"></div>
         </div>
@@ -139,38 +263,43 @@
         <!-- 判定ラベル -->
         <div class="judgment" id="judgment-label">--</div>
 
-        <!-- メタグリッド -->
+        <!-- メタ情報 -->
         <div class="meta-grid">
           <div class="meta-item">
-            <div class="meta-label">アラートレベル</div>
+            <div class="meta-label">寄り前警戒度</div>
             <div class="meta-value" id="alert-level">--</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">リスク分類</div>
+            <div class="meta-label">地合い分類</div>
             <div class="meta-value" id="risk-classification">--</div>
           </div>
         </div>
 
-        <!-- コメントボックス -->
+        <!-- コメント -->
         <div class="comment-box">
-          <div class="comment-label">判定コメント</div>
-          <div class="comment-text" id="comment-text">判定ボタンを押すとコメントが表示されます。</div>
+          <div class="comment-label">朝の地合いメモ</div>
+          <div class="comment-text" id="comment-text">
+            左のフォームに数値を入力し「需給を判定する」を押してください。
+          </div>
         </div>
 
-        <!-- ブレークダウンテーブル -->
-        <div class="breakdown-section">
-          <div class="breakdown-title">指標別寄与度</div>
-          <div id="breakdown-table"></div>
-        </div>
-
-        <!-- キーワードアラート -->
+        <!-- キーワード -->
         <div id="keyword-alerts" style="display:none">
           <div class="keyword-title">検出キーワード</div>
           <div id="keyword-tags"></div>
         </div>
 
+        <!-- 指標別寄与度（折りたたみ） -->
+        <details class="breakdown-details">
+          <summary class="breakdown-summary">指標別寄与度</summary>
+          <div class="breakdown-section">
+            <div id="breakdown-table"></div>
+          </div>
+        </details>
+
       </div>
     </section>
+
   </main>
 
   <!-- ===== 履歴・比較セクション ===== -->
@@ -187,13 +316,11 @@
       </div>
     </div>
 
-    <!-- スコア推移チャート -->
     <div class="chart-wrap" id="chart-wrap" style="display:none">
       <div class="chart-label">スコア推移</div>
       <canvas id="score-chart"></canvas>
     </div>
 
-    <!-- 履歴テーブル -->
     <div class="history-table-wrap">
       <div class="history-empty" id="history-empty">
         まだ履歴がありません。「需給を判定する」を実行すると自動保存されます。
@@ -219,7 +346,6 @@
       </div>
     </div>
 
-    <!-- 比較パネル -->
     <div class="comparison-panel" id="comparison-panel" style="display:none">
       <div class="comparison-header">
         <div class="comparison-title">比較結果</div>
@@ -229,6 +355,12 @@
     </div>
 
   </section>
+
+  <!-- スマホ用スティッキーボタンバー -->
+  <div class="mobile-bar" id="mobile-bar">
+    <button id="btn-judge-mobile" class="btn-mobile-judge">需給を判定する</button>
+    <button id="btn-reset-mobile" class="btn-mobile-reset">リセット</button>
+  </div>
 
   <script src="script.js"></script>
 </body>
