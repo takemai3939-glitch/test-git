@@ -1261,12 +1261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('header-cta');
     if (!btn) return;
 
-    // 優先度: history > (result && judged) > input > その他
+    // 優先度: history > input > (判定済み) > goto-form
+    // ※ result-panel は input-section の子要素のため secVis.result は状態判定に使わない
     let state;
-    if      (secVis.history)                  state = 'back-to-input';
-    else if (secVis.result && hasJudged)      state = 'see-history';
-    else if (secVis.input)                    state = 'judge';
-    else                                      state = 'goto-form';
+    if      (secVis.history)  state = 'back-to-input';
+    else if (secVis.input)    state = 'judge';
+    else if (hasJudged)       state = 'see-history';
+    else                      state = 'goto-form';
 
     btn.dataset.action = state;
     btn.classList.remove('cta-exec', 'cta-confirm');
@@ -1279,23 +1280,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4セクションを IntersectionObserver で監視
+  // 3セクションを IntersectionObserver で監視
+  // ※ result-panel-anchor は input-section の子要素のため監視対象から除外
   if ('IntersectionObserver' in window) {
     const sectionObs = new IntersectionObserver(entries => {
       entries.forEach(e => {
         const el = e.target;
         if      (el.classList.contains('hero-section'))  secVis.hero    = e.isIntersecting;
         else if (el.id === 'input-section')              secVis.input   = e.isIntersecting;
-        else if (el.id === 'result-panel-anchor')        secVis.result  = e.isIntersecting;
         else if (el.id === 'history-section')            secVis.history = e.isIntersecting;
         updateHeaderCta();
       });
-    }, { threshold: 0.08 });
+    }, { threshold: 0.05 });
 
     [
       document.querySelector('.hero-section'),
       document.getElementById('input-section'),
-      document.getElementById('result-panel-anchor'),
       document.getElementById('history-section'),
     ].forEach(el => el && sectionObs.observe(el));
   }
