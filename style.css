@@ -122,9 +122,11 @@ a:visited { color: inherit; }
 .header-cta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 120px;
   padding: 7px 18px;
   background: transparent;
-  border: 1px solid rgba(99,102,241,0.5);
+  border: 1px solid rgba(99,102,241,0.50);
   color: #a5b4fc;
   border-radius: 20px;
   font-size: 13px;
@@ -132,25 +134,44 @@ a:visited { color: inherit; }
   white-space: nowrap;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition: background 0.22s, border-color 0.22s, color 0.22s,
+              transform 0.18s, box-shadow 0.22s, opacity 0.2s;
 }
 .header-cta:hover {
-  background: rgba(99,102,241,0.1);
-  border-color: rgba(99,102,241,0.8);
+  background: rgba(99,102,241,0.10);
+  border-color: rgba(99,102,241,0.80);
   color: #c7d2fe;
   transform: translateY(-1px);
 }
-/* 判定する / 結果を見る 状態 */
-.header-cta.cta-action {
-  background: linear-gradient(135deg, #6366f1, #7c3aed);
+/* 状態2: 判定を実行（緑・最強CTA） */
+.header-cta.cta-exec {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+  box-shadow: 0 4px 16px rgba(34,197,94,0.40);
 }
-.header-cta.cta-action:hover {
-  box-shadow: 0 6px 22px rgba(99,102,241,0.55);
+.header-cta.cta-exec:hover {
+  box-shadow: 0 6px 22px rgba(34,197,94,0.58);
   transform: translateY(-1px);
   color: #fff;
+}
+/* 状態3: 確認系（中間・パープル） */
+.header-cta.cta-confirm {
+  background: rgba(99,102,241,0.14);
+  border-color: rgba(99,102,241,0.50);
+  color: #a5b4fc;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.18);
+}
+.header-cta.cta-confirm:hover {
+  background: rgba(99,102,241,0.24);
+  border-color: rgba(99,102,241,0.80);
+  color: #c7d2fe;
+}
+/* ローディング状態 */
+.header-cta:disabled {
+  opacity: 0.60;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ===========================
@@ -320,6 +341,24 @@ a:visited { color: inherit; }
 .hero-step:hover {
   border-color: rgba(99,102,241,0.38);
   box-shadow: 0 4px 20px rgba(99,102,241,0.12);
+}
+/* ステップ: 現在アクティブ */
+.hero-step.step-active {
+  border-color: rgba(99,102,241,0.55);
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.20), 0 4px 20px rgba(99,102,241,0.18);
+  background: rgba(99,102,241,0.12);
+}
+.hero-step.step-active .hf-num {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  box-shadow: 0 0 10px rgba(99,102,241,0.55);
+}
+/* ステップ: 完了済み */
+.hero-step.step-done {
+  opacity: 0.50;
+  border-color: rgba(99,102,241,0.15);
+}
+.hero-step.step-done .hf-num {
+  background: rgba(99,102,241,0.25);
 }
 
 .hf-num {
@@ -1811,6 +1850,27 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
   from { opacity: 0; transform: translateY(-5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* セクションハイライト（移動先フィードバック） */
+@keyframes sectionPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.00); }
+  35%       { box-shadow: 0 0 0 10px rgba(99,102,241,0.22); }
+}
+.section-highlight { animation: sectionPulse 0.95s ease forwards; }
+
+/* 結果カードハイライト（判定完了フィードバック） */
+@keyframes resultPulse {
+  0%, 100% { box-shadow: var(--shadow-sm); }
+  35%       { box-shadow: 0 0 0 12px rgba(34,197,94,0.28), var(--shadow-sm); }
+}
+.result-highlight { animation: resultPulse 1.20s ease forwards; }
+
+/* 履歴カードハイライト */
+@keyframes histCardPulse {
+  0%, 100% { box-shadow: none; }
+  35%       { box-shadow: 0 0 0 8px rgba(99,102,241,0.20); }
+}
+.history-highlight { animation: histCardPulse 1.00s ease forwards; }
 
 /* ==========================================================
    レスポンシブ — 4段階ブレークポイント

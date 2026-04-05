@@ -1201,81 +1201,155 @@ document.addEventListener('DOMContentLoaded', () => {
   // ヘルプボタン初期化
   initHelpButtons();
 
-  // ヒーローCTAのスムーズスクロール（aタグ）
+  // ===========================
+  // ヘルパー — スクロール・ハイライト・ステップ
+  // ===========================
+
+  /** ヘッダー高さを考慮したスムーズスクロール */
+  function scrollToEl(el, extraOffset) {
+    if (!el) return;
+    const hh = document.querySelector('.app-header')?.offsetHeight || 60;
+    const gap = typeof extraOffset === 'number' ? extraOffset : 16;
+    const top = el.getBoundingClientRect().top + window.scrollY - hh - gap;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+
+  /** 要素を一時的にハイライト（CSSアニメーションクラスを着脱） */
+  function flashEl(el, cls, duration) {
+    if (!el) return;
+    const c = cls      || 'section-highlight';
+    const d = duration || 900;
+    el.classList.remove(c);
+    void el.offsetWidth; // reflow
+    el.classList.add(c);
+    setTimeout(() => el.classList.remove(c), d);
+  }
+
+  /** ヒーロー3ステップの現在フェーズを反映 */
+  function setStepPhase(phase) {
+    document.querySelectorAll('.hero-step[data-step]').forEach(el => {
+      el.classList.remove('step-active', 'step-done');
+    });
+    if (phase === 'input') {
+      document.querySelector('.hero-step[data-step="1"]')?.classList.add('step-active');
+    } else if (phase === 'done') {
+      document.querySelector('.hero-step[data-step="1"]')?.classList.add('step-done');
+      document.querySelector('.hero-step[data-step="2"]')?.classList.add('step-done');
+      document.querySelector('.hero-step[data-step="3"]')?.classList.add('step-active');
+    }
+  }
+
+  // アンカーリンクのスムーズスクロール（ヘッダー高さ考慮）
   document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {
       const target = document.querySelector(link.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      if (target) { e.preventDefault(); scrollToEl(target); }
     });
   });
 
   // ===========================
-  // ヘッダーCTA 状態管理
+  // ヘッダーCTA — 4状態切替機
+  // 状態1 goto-form   : hero/top付近       → 「入力欄へ移動」（nav・アウトライン）
+  // 状態2 judge       : input付近          → 「判定を実行」  （exec・グリーン）
+  // 状態3 see-history : 判定済み・result付近 → 「履歴を見る」  （confirm・中間パープル）
+  // 状態4 back-to-input: history付近       → 「再判定する」  （nav・アウトライン）
   // ===========================
-  let isInputVisible = false;
+  const secVis = { hero: true, input: false, result: false, history: false };
   let hasJudged = false;
 
   function updateHeaderCta() {
     const btn = document.getElementById('header-cta');
     if (!btn) return;
-    if (hasJudged) {
-      btn.textContent = '結果を見る';
-      btn.dataset.action = 'see-result';
-      btn.classList.add('cta-action');
-    } else if (isInputVisible) {
-      btn.textContent = '判定する';
-      btn.dataset.action = 'judge';
-      btn.classList.add('cta-action');
-    } else {
-      btn.textContent = '入力フォームへ';
-      btn.dataset.action = 'goto-form';
-      btn.classList.remove('cta-action');
+
+    // 優先度: history > (result && judged) > input > その他
+    let state;
+    if      (secVis.history)                  state = 'back-to-input';
+    else if (secVis.result && hasJudged)      state = 'see-history';
+    else if (secVis.input)                    state = 'judge';
+    else                                      state = 'goto-form';
+
+    btn.dataset.action = state;
+    btn.classList.remove('cta-exec', 'cta-confirm');
+
+    switch (state) {
+      case 'goto-form':     btn.textContent = '入力欄へ移動'; break;
+      case 'judge':         btn.textContent = '判定を実行';  btn.classList.add('cta-exec');    break;
+      case 'see-history':   btn.textContent = '履歴を見る';  btn.classList.add('cta-confirm'); break;
+      case 'back-to-input': btn.textContent = '再判定する';  break;
     }
   }
 
-  const inputSection = document.getElementById('input-section');
-  if (inputSection && 'IntersectionObserver' in window) {
-    const inputObserver = new IntersectionObserver(entries => {
+  // 4セクションを IntersectionObserver で監視
+  if ('IntersectionObserver' in window) {
+    const sectionObs = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        isInputVisible = e.isIntersecting;
+        const el = e.target;
+        if      (el.classList.contains('hero-section'))  secVis.hero    = e.isIntersecting;
+        else if (el.id === 'input-section')              secVis.input   = e.isIntersecting;
+        else if (el.id === 'result-panel-anchor')        secVis.result  = e.isIntersecting;
+        else if (el.id === 'history-section')            secVis.history = e.isIntersecting;
         updateHeaderCta();
       });
-    }, { threshold: 0.05 });
-    inputObserver.observe(inputSection);
+    }, { threshold: 0.08 });
+
+    [
+      document.querySelector('.hero-section'),
+      document.getElementById('input-section'),
+      document.getElementById('result-panel-anchor'),
+      document.getElementById('history-section'),
+    ].forEach(el => el && sectionObs.observe(el));
   }
 
+  // ヘッダーCTA クリック — 状態ごとの挙動 + 体験フィードバック
   const headerCta = document.getElementById('header-cta');
   if (headerCta) {
     headerCta.addEventListener('click', () => {
       const action = headerCta.dataset.action;
-      if (action === 'goto-form') {
-        document.getElementById('input-section')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // ── 移動系（goto-form / back-to-input）──────────────────
+      if (action === 'goto-form' || action === 'back-to-input') {
+        const target = document.getElementById('input-section');
+        scrollToEl(target);
+        setTimeout(() => {
+          flashEl(target, 'section-highlight');
+          target?.querySelector('input[type="number"]')?.focus({ preventScroll: true });
+        }, 520);
+
+      // ── 実行系（judge）— ローディング付き ───────────────────
       } else if (action === 'judge') {
-        runJudgment(true);
-        hasJudged = true;
-        updateHeaderCta();
-        if (window.innerWidth < 900) {
-          setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
-        } else {
-          document.getElementById('result-panel-anchor')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      } else if (action === 'see-result') {
-        document.getElementById('result-panel-anchor')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        headerCta.textContent = '判定中...';
+        headerCta.classList.add('cta-exec');
+        headerCta.disabled = true;
+
+        // 1フレーム後に処理（"判定中..."を画面に描画してから実行）
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          runJudgment(true);
+          hasJudged = true;
+          setStepPhase('done');
+          headerCta.disabled = false;
+          updateHeaderCta();
+
+          if (window.innerWidth < 900) {
+            // モバイル: 結果は上部にある（order: -1）
+            setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
+          } else {
+            // デスクトップ: 結果カードを強調
+            const resultCard = document.getElementById('result-card');
+            setTimeout(() => flashEl(resultCard, 'result-highlight', 1200), 160);
+          }
+        }));
+
+      // ── 確認系（see-history）────────────────────────────────
+      } else if (action === 'see-history') {
+        const target = document.getElementById('history-section');
+        scrollToEl(target);
+        setTimeout(() => {
+          flashEl(target, 'section-highlight');
+          const latestCard = document.querySelector('#history-tbody .hist-card');
+          if (latestCard) flashEl(latestCard, 'history-highlight', 1000);
+        }, 520);
       }
     });
-  }
-
-  // 判定後のスクロール（モバイル用）
-  function scrollToResult() {
-    if (window.innerWidth < 900) {
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
-    }
   }
 
   // 判定・リセットボタン（PC）
@@ -1283,13 +1357,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnJudge) btnJudge.addEventListener('click', () => {
     runJudgment(true);
     hasJudged = true;
+    setStepPhase('done');
     updateHeaderCta();
-    scrollToResult();
+    if (window.innerWidth < 900) {
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
+    }
   });
   const btnReset = document.getElementById('btn-reset');
   if (btnReset) btnReset.addEventListener('click', () => {
     resetForm();
     hasJudged = false;
+    setStepPhase('input');
     updateHeaderCta();
   });
 
@@ -1298,13 +1376,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnJudgeMobile) btnJudgeMobile.addEventListener('click', () => {
     runJudgment(true);
     hasJudged = true;
+    setStepPhase('done');
     updateHeaderCta();
-    scrollToResult();
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
   });
   const btnResetMobile = document.getElementById('btn-reset-mobile');
   if (btnResetMobile) btnResetMobile.addEventListener('click', () => {
     resetForm();
     hasJudged = false;
+    setStepPhase('input');
     updateHeaderCta();
   });
 
