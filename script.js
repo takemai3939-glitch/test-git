@@ -877,12 +877,13 @@ function updateDate() {
 
 /**
  * 需給判定を実行する
+ * @param {boolean} saveToHistory - trueのとき履歴に追加（判定ボタン押下時のみtrue）
  */
-function runJudgment() {
+function runJudgment(saveToHistory = false) {
   // 1. フォームからデータ取得
   const data = getFormData();
 
-  // 2. ローカルストレージに保存
+  // 2. 現在の入力をセッションストレージに保存
   saveToStorage(data);
 
   // 3. スコア計算
@@ -893,6 +894,11 @@ function runJudgment() {
 
   // 5. UIを更新
   updateResultUI(score, breakdown, eventPenalty, comment, data);
+
+  // 6. 履歴保存（判定ボタン押下時のみ）
+  if (saveToHistory) {
+    addHistoryRecord(data, score, comment);
+  }
 }
 
 /**
@@ -953,6 +959,432 @@ function resetForm() {
 }
 
 // ===========================
+// 履歴機能
+// ===========================
+
+const HISTORY_KEY = 'japan-stock-monitor-history-v1';
+const HISTORY_MAX = 30;
+
+/** 履歴を読み込む */
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 履歴を保存する */
+function saveHistoryData(history) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch { /* storage unavailable */ }
+}
+
+/**
+ * 判定結果を履歴に追加し、テーブルとチャートを再描画する
+ * @param {object} data - 入力データ
+ * @param {number} score - 計算済みスコア
+ * @param {string} comment - 生成コメント
+ */
+function addHistoryRecord(data, score, comment) {
+  const history = loadHistory();
+  const record = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    score,
+    judgment: getJudgment(score).label,
+    comment,
+    data: { ...data },
+  };
+  history.unshift(record); // 先頭に追加（最新が上）
+  if (history.length > HISTORY_MAX) history.splice(HISTORY_MAX);
+  saveHistoryData(history);
+  renderHistoryTable();
+  renderScoreChart();
+}
+
+/** 履歴テーブルを描画する */
+function renderHistoryTable() {
+  const history = loadHistory();
+
+  const countEl  = document.getElementById('history-count');
+  const emptyEl  = document.getElementById('history-empty');
+  const scrollEl = document.getElementById('history-table-scroll');
+  const tbodyEl  = document.getElementById('history-tbody');
+
+  if (countEl) countEl.textContent = `${history.length}件`;
+
+  if (history.length === 0) {
+    if (emptyEl)  emptyEl.style.display  = 'block';
+    if (scrollEl) scrollEl.style.display = 'none';
+    return;
+  }
+
+  if (emptyEl)  emptyEl.style.display  = 'none';
+  if (scrollEl) scrollEl.style.display = 'block';
+
+  tbodyEl.innerHTML = '';
+
+  for (const rec of history) {
+    const d = new Date(rec.date);
+    const dateStr = `${d.getMonth() + 1}/${d.getDate()} `
+      + `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+    const j = getJudgment(rec.score);
+
+    const adv = rec.data.advances;
+    const dec = rec.data.declines;
+    const advRatioStr = (adv && dec && !isNaN(adv) && !isNaN(dec))
+      ? Math.round(adv / (adv + dec) * 100) + '%'
+      : '--';
+
+    const futuresVal = rec.data.nikkeiFutures;
+    const futuresStr = (futuresVal != null && !isNaN(futuresVal))
+      ? (futuresVal >= 0 ? '+' : '') + futuresVal + '%'
+      : '--';
+
+    const memoText = (rec.data.newsMemo || rec.data.trumpMemo || '').trim().slice(0, 40)
+      + ((rec.data.newsMemo || '').length > 40 ? '…' : '');
+
+    const tr = document.createElement('tr');
+    tr.dataset.id = rec.id;
+    tr.innerHTML = `
+      <td class="col-check">
+        <input type="checkbox" class="history-check" data-id="${rec.id}">
+      </td>
+      <td class="col-date">${dateStr}</td>
+      <td class="col-score">
+        <span class="history-score-num ${j.colorClass}">${rec.score}</span>
+      </td>
+      <td class="col-judgment">
+        <span class="${j.colorClass}">${j.label}</span>
+      </td>
+      <td class="col-vix">${rec.data.vix ?? '--'}</td>
+      <td class="col-usdjpy">${rec.data.usdjpy ?? '--'}</td>
+      <td class="col-futures">${futuresStr}</td>
+      <td class="col-adv">${advRatioStr}</td>
+      <td class="col-memo">
+        <span class="history-memo-text">${memoText || '--'}</span>
+      </td>
+      <td class="col-action">
+        <button class="btn-load-rec" data-id="${rec.id}">読込</button>
+        <button class="btn-del-rec"  data-id="${rec.id}">削除</button>
+      </td>
+    `;
+    tbodyEl.appendChild(tr);
+  }
+
+  // チェックボックスの変更を監視
+  tbodyEl.querySelectorAll('.history-check').forEach(cb => {
+    cb.addEventListener('change', onCheckboxChange);
+  });
+
+  // 読込ボタン
+  tbodyEl.querySelectorAll('.btn-load-rec').forEach(btn => {
+    btn.addEventListener('click', e => {
+      loadHistoryRecord(Number(e.currentTarget.dataset.id));
+    });
+  });
+
+  // 削除ボタン
+  tbodyEl.querySelectorAll('.btn-del-rec').forEach(btn => {
+    btn.addEventListener('click', e => {
+      deleteHistoryRecord(Number(e.currentTarget.dataset.id));
+    });
+  });
+}
+
+/**
+ * チェックボックスの変更ハンドラ。
+ * 2件選択で比較ボタンを有効化。3件目以降のチェックを禁止。
+ */
+function onCheckboxChange() {
+  const checked   = [...document.querySelectorAll('.history-check:checked')];
+  const unchecked = [...document.querySelectorAll('.history-check:not(:checked)')];
+  const btnCompare = document.getElementById('btn-compare');
+
+  if (btnCompare) btnCompare.disabled = checked.length !== 2;
+
+  // 2件選択済みなら残りを disabled に
+  unchecked.forEach(cb => { cb.disabled = checked.length >= 2; });
+}
+
+/** 過去レコードを入力フォームに読み込み、再判定する */
+function loadHistoryRecord(id) {
+  const rec = loadHistory().find(r => r.id === id);
+  if (!rec) return;
+  setFormData(rec.data);
+  runJudgment(false); // 履歴には追加しない
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/** 指定レコードを履歴から削除する */
+function deleteHistoryRecord(id) {
+  const history = loadHistory().filter(r => r.id !== id);
+  saveHistoryData(history);
+  renderHistoryTable();
+  renderScoreChart();
+  // 比較パネルを閉じる
+  const panel = document.getElementById('comparison-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+/** 選択中の2件を比較表示する */
+function showComparison() {
+  const checked = [...document.querySelectorAll('.history-check:checked')];
+  if (checked.length !== 2) return;
+
+  const history = loadHistory();
+  const ids = checked.map(cb => Number(cb.dataset.id));
+  const [recA, recB] = ids.map(id => history.find(r => r.id === id));
+  if (!recA || !recB) return;
+
+  renderComparison(recA, recB);
+
+  const panel = document.getElementById('comparison-panel');
+  if (panel) {
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+/**
+ * 2レコードの比較パネルを構築する
+ * @param {object} recA - 比較元レコード
+ * @param {object} recB - 比較先レコード
+ */
+function renderComparison(recA, recB) {
+  const body = document.getElementById('comparison-body');
+  if (!body) return;
+
+  const fmtDate = iso => {
+    const d = new Date(iso);
+    return `${d.getMonth() + 1}/${d.getDate()} `
+      + `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+
+  const jA = getJudgment(recA.score);
+  const jB = getJudgment(recB.score);
+  const delta = recB.score - recA.score;
+  const deltaClass = delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'zero';
+  const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+
+  // 比較する指標の定義
+  // higherIsBetter: true=高い方が良い, false=低い方が良い, null=文脈依存
+  const METRICS = [
+    { label: 'スコア',       kA: recA.score,             kB: recB.score,             unit: '',    better: true  },
+    { label: 'VIX',          kA: recA.data.vix,           kB: recB.data.vix,           unit: '',    better: false },
+    { label: 'ドル円',        kA: recA.data.usdjpy,        kB: recB.data.usdjpy,        unit: '円',  better: true  },
+    { label: '米10年金利',    kA: recA.data.us10y,         kB: recB.data.us10y,         unit: '%',   better: false },
+    { label: 'NASDAQ',       kA: recA.data.nasdaq,        kB: recB.data.nasdaq,        unit: '%',   better: true  },
+    { label: 'S&P500',       kA: recA.data.sp500,         kB: recB.data.sp500,         unit: '%',   better: true  },
+    { label: '日経先物',      kA: recA.data.nikkeiFutures, kB: recB.data.nikkeiFutures, unit: '%',   better: true  },
+    { label: '値上がり銘柄',  kA: recA.data.advances,      kB: recB.data.advances,      unit: '',    better: true  },
+    { label: '値下がり銘柄',  kA: recA.data.declines,      kB: recB.data.declines,      unit: '',    better: false },
+    { label: '売買代金',      kA: recA.data.volume,        kB: recB.data.volume,        unit: '兆',  better: true  },
+    { label: '空売り比率',    kA: recA.data.shortRatio,    kB: recB.data.shortRatio,    unit: '%',   better: false },
+    { label: '騰落レシオ',    kA: recA.data.tokoRachi,     kB: recB.data.tokoRachi,     unit: '',    better: null  },
+    { label: '信用評価損益率', kA: recA.data.marginPL,      kB: recB.data.marginPL,      unit: '%',   better: null  },
+    { label: '海外フロー',    kA: recA.data.foreignFlow,   kB: recB.data.foreignFlow,   unit: '億',  better: true  },
+  ];
+
+  // スコアサマリー行
+  let html = `
+    <div class="comp-score-row">
+      <div class="comp-score-box">
+        <div class="comp-date-label">${fmtDate(recA.date)}</div>
+        <div class="comp-score-num ${jA.colorClass}">${recA.score}</div>
+        <div class="comp-judgment-label ${jA.colorClass}">${jA.label}</div>
+      </div>
+      <div class="comp-delta-box">
+        <div class="comp-delta-label">差分</div>
+        <div class="comp-delta-num ${deltaClass}">${deltaStr}</div>
+      </div>
+      <div class="comp-score-box">
+        <div class="comp-date-label">${fmtDate(recB.date)}</div>
+        <div class="comp-score-num ${jB.colorClass}">${recB.score}</div>
+        <div class="comp-judgment-label ${jB.colorClass}">${jB.label}</div>
+      </div>
+    </div>
+  `;
+
+  // 指標比較テーブル
+  html += `
+    <div class="comparison-table-scroll">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>指標</th>
+            <th>${fmtDate(recA.date)}</th>
+            <th class="ct-center">変化</th>
+            <th>${fmtDate(recB.date)}</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  for (const m of METRICS) {
+    const vA = m.kA, vB = m.kB;
+    const valid = vA != null && vB != null && !isNaN(vA) && !isNaN(vB);
+
+    let diffHtml = '<span class="diff-zero">--</span>';
+    if (valid) {
+      const diff = vB - vA;
+      const sign = diff > 0 ? '+' : '';
+      // 小数点以下の桁数をデータに合わせる
+      const digits = Number.isInteger(vA) && Number.isInteger(vB) ? 0 : 2;
+      const diffStr = `${sign}${diff.toFixed(digits)}${m.unit}`;
+      let cls = 'diff-zero';
+      if (diff !== 0 && m.better !== null) {
+        cls = (m.better ? diff > 0 : diff < 0) ? 'diff-pos' : 'diff-neg';
+      }
+      diffHtml = `<span class="${cls}">${diffStr}</span>`;
+    }
+
+    const dispA = vA != null ? `${vA}${m.unit}` : '--';
+    const dispB = vB != null ? `${vB}${m.unit}` : '--';
+
+    html += `
+      <tr>
+        <td class="ct-metric">${m.label}</td>
+        <td>${dispA}</td>
+        <td class="ct-center">${diffHtml}</td>
+        <td>${dispB}</td>
+      </tr>
+    `;
+  }
+
+  html += '</tbody></table></div>';
+  body.innerHTML = html;
+}
+
+// ===========================
+// スコア推移チャート（Canvas）
+// ===========================
+
+/**
+ * 履歴データをもとにスコア推移チャートを描画する
+ * 2件以上の履歴がある場合のみ表示する
+ */
+function renderScoreChart() {
+  const history   = loadHistory();
+  const wrapEl    = document.getElementById('chart-wrap');
+  const canvas    = document.getElementById('score-chart');
+  if (!wrapEl || !canvas) return;
+
+  if (history.length < 2) {
+    wrapEl.style.display = 'none';
+    return;
+  }
+
+  wrapEl.style.display = 'block';
+
+  // 古い順に並べ替え
+  const pts = [...history].reverse();
+
+  // デバイスピクセル比対応
+  const dpr  = window.devicePixelRatio || 1;
+  const W    = canvas.offsetWidth || 700;
+  const H    = 130;
+
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // レイアウト定数
+  const PAD_L = 36, PAD_R = 16, PAD_T = 12, PAD_B = 26;
+  const PW = W - PAD_L - PAD_R;  // プロットエリア幅
+  const PH = H - PAD_T - PAD_B;  // プロットエリア高さ
+
+  // ── 背景 ──
+  ctx.fillStyle = '#0e0e14';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── グリッド線と Y 軸ラベル ──
+  ctx.lineWidth = 0.5;
+  [0, 20, 40, 60, 80, 100].forEach(v => {
+    const y = PAD_T + PH - (v / 100) * PH;
+    ctx.strokeStyle = v === 40 || v === 60 ? '#3a3a50' : '#2a2a40';
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + PW, y); ctx.stroke();
+    ctx.fillStyle = '#666688';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, PAD_L - 4, y + 3);
+  });
+
+  // 座標変換ヘルパー
+  const getX = i  => PAD_L + (pts.length > 1 ? (i / (pts.length - 1)) * PW : PW / 2);
+  const getY = sc => PAD_T + PH - (Math.max(0, Math.min(100, sc)) / 100) * PH;
+
+  // スコアに応じた色
+  const scoreColor = sc => {
+    if (sc >= 80) return '#00ff88';
+    if (sc >= 60) return '#4ade80';
+    if (sc >= 40) return '#facc15';
+    if (sc >= 20) return '#f97316';
+    return '#f87171';
+  };
+
+  // ── グラデーション面塗り ──
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + PH);
+  grad.addColorStop(0, 'rgba(90, 90, 255, 0.18)');
+  grad.addColorStop(1, 'rgba(90, 90, 255, 0)');
+
+  ctx.beginPath();
+  ctx.moveTo(getX(0), getY(pts[0].score));
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(getX(i), getY(pts[i].score));
+  ctx.lineTo(getX(pts.length - 1), PAD_T + PH);
+  ctx.lineTo(getX(0), PAD_T + PH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // ── 折れ線 ──
+  ctx.beginPath();
+  ctx.strokeStyle = '#5a5aff';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.moveTo(getX(0), getY(pts[0].score));
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(getX(i), getY(pts[i].score));
+  ctx.stroke();
+
+  // ── データ点（色付きドット） ──
+  pts.forEach((p, i) => {
+    const x = getX(i), y = getY(p.score);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = scoreColor(p.score);
+    ctx.fill();
+    // 最新点は縁取りして強調
+    if (i === pts.length - 1) {
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.strokeStyle = scoreColor(p.score);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  });
+
+  // ── X 軸日付ラベル（間引き表示） ──
+  const maxLabels = Math.min(pts.length, 10);
+  const step = Math.max(1, Math.floor(pts.length / maxLabels));
+  ctx.fillStyle = '#666688';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < pts.length; i += step) {
+    const d = new Date(pts[i].date);
+    const label = `${d.getMonth() + 1}/${d.getDate()}`;
+    ctx.fillText(label, getX(i), H - PAD_B + 14);
+  }
+}
+
+// ===========================
 // 初期化
 // ===========================
 
@@ -961,21 +1393,50 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDate();
   setInterval(updateDate, 60000);
 
-  // ボタンイベントを設定
+  // ── 判定・リセットボタン ──
   const btnJudge = document.getElementById('btn-judge');
-  if (btnJudge) btnJudge.addEventListener('click', runJudgment);
+  if (btnJudge) btnJudge.addEventListener('click', () => runJudgment(true));
 
   const btnReset = document.getElementById('btn-reset');
   if (btnReset) btnReset.addEventListener('click', resetForm);
 
-  // 保存データがあればロード、なければサンプル値をセット
+  // ── 履歴ボタン ──
+  const btnCompare = document.getElementById('btn-compare');
+  if (btnCompare) btnCompare.addEventListener('click', showComparison);
+
+  const btnClear = document.getElementById('btn-clear-history');
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      if (!confirm('履歴を全件削除しますか？この操作は取り消せません。')) return;
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistoryTable();
+      renderScoreChart();
+      const panel = document.getElementById('comparison-panel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
+  const btnCloseComp = document.getElementById('btn-close-comparison');
+  if (btnCloseComp) {
+    btnCloseComp.addEventListener('click', () => {
+      const panel = document.getElementById('comparison-panel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
+  // ── 初期データのロードと判定 ──
   const savedData = loadFromStorage();
   if (savedData) {
     setFormData(savedData);
   } else {
     setFormData(SAMPLE_VALUES);
   }
+  runJudgment(false); // 初回は履歴に追加しない
 
-  // 初回判定を自動実行
-  runJudgment();
+  // ── 履歴テーブル・チャートの初期描画 ──
+  renderHistoryTable();
+  renderScoreChart();
+
+  // チャートはウィンドウリサイズ時に再描画
+  window.addEventListener('resize', renderScoreChart);
 });

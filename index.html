@@ -173,6 +173,63 @@
     </section>
   </main>
 
+  <!-- ===== 履歴・比較セクション ===== -->
+  <section class="history-section" id="history-section">
+
+    <div class="history-header">
+      <div class="history-title">
+        <span>需給スコア履歴</span>
+        <span class="history-count" id="history-count">0件</span>
+      </div>
+      <div class="history-actions">
+        <button class="btn-history btn-compare" id="btn-compare" disabled>選択した2件を比較</button>
+        <button class="btn-history btn-clear-history" id="btn-clear-history">履歴を全削除</button>
+      </div>
+    </div>
+
+    <!-- スコア推移チャート -->
+    <div class="chart-wrap" id="chart-wrap" style="display:none">
+      <div class="chart-label">スコア推移</div>
+      <canvas id="score-chart"></canvas>
+    </div>
+
+    <!-- 履歴テーブル -->
+    <div class="history-table-wrap">
+      <div class="history-empty" id="history-empty">
+        まだ履歴がありません。「需給を判定する」を実行すると自動保存されます。
+      </div>
+      <div class="history-table-scroll" id="history-table-scroll" style="display:none">
+        <table class="history-table" id="history-table">
+          <thead>
+            <tr>
+              <th class="col-check"></th>
+              <th class="col-date">日付・時刻</th>
+              <th class="col-score">スコア</th>
+              <th class="col-judgment">判定</th>
+              <th class="col-vix">VIX</th>
+              <th class="col-usdjpy">ドル円</th>
+              <th class="col-futures">日経先物</th>
+              <th class="col-adv">騰落比</th>
+              <th class="col-memo">メモ</th>
+              <th class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 比較パネル -->
+    <div class="comparison-panel" id="comparison-panel" style="display:none">
+      <div class="comparison-header">
+        <div class="comparison-title">比較結果</div>
+        <button class="btn-close-comparison" id="btn-close-comparison">✕ 閉じる</button>
+      </div>
+      <div class="comparison-body" id="comparison-body"></div>
+    </div>
+
+  </section>
+
   <script src="script.js"></script>
 </body>
 </html>
