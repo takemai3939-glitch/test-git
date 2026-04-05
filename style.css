@@ -125,9 +125,9 @@ a:visited { color: inherit; }
   justify-content: center;
   min-width: 120px;
   padding: 7px 18px;
-  background: rgba(99,102,241,0.14);
-  border: 1px solid rgba(99,102,241,0.70);
-  color: #c7d2fe;
+  background: transparent;
+  border: 1px solid rgba(99,102,241,0.50);
+  color: #a5b4fc;
   border-radius: 20px;
   font-size: 13px;
   font-weight: 700;
@@ -138,11 +138,10 @@ a:visited { color: inherit; }
               transform 0.18s, box-shadow 0.22s, opacity 0.2s;
 }
 .header-cta:hover {
-  background: rgba(99,102,241,0.24);
-  border-color: #6366f1;
-  color: #e0e7ff;
+  background: rgba(99,102,241,0.10);
+  border-color: rgba(99,102,241,0.80);
+  color: #c7d2fe;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(99,102,241,0.25);
 }
 /* 状態2: 判定を実行（緑・最強CTA） */
 .header-cta.cta-exec {
