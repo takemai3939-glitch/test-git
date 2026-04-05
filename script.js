@@ -3,21 +3,41 @@
 // ===========================
 
 // 各指標のスコアウェイト（合計100）
+// ── 設計根拠 ──────────────────────────────────────────────
+// [外部環境 計54pt]
+//   nikkeiFutures 14: 寄り付き方向を最も直接規定する。SGX/CME先物の動きがそのまま開始値に反映される。
+//   vix          13: グローバルリスク温度計。30超で機関投資家のリスク管理ルールが作動し強制的なデリスクが発生。
+//   nasdaq       12: 日本の半導体・テック株はNASDAQとの相関が高い。東エレク・アドテスト等がNASDAQに連動。
+//   sp500         8: 米国市場全般の方向感を補完。NASDAQより分散度が高く、リスクセンチメントの確認に有効。
+//   us10y         7: 高金利はグロース株バリュエーション圧縮に直結。ドル高/円安との複合効果で日本株への影響が複雑。
+// [日本株固有 計32pt]
+//   foreignFlow  11: 東証プライム売買の約65%を外国人が占める。彼らの買い越し/売り越しが需給を決定する。
+//   advDecline   10: 騰落銘柄比率は「相場の幅」を示す。指数が強くても内部悪化なら需給は脆弱。
+//   usdjpy        7: 輸出株・日経全体への為替影響。ただし急激な円安は介入リスクを呼ぶため一方向に評価しない。
+// [テクニカル・センチメント 計14pt]
+//   tokoRachi     6: 25日騰落レシオ。中期的な買われすぎ/売られすぎを示す定番指標。
+//   shortRatio    5: 空売り比率はセンチメントの代理変数。高水準は需給悪化だが踏み上げポテンシャルとの二面性あり。
+//   volume        4: 売買代金は方向性の「確度」を補強する。単独では方向不明のため低ウェイト。
+//   marginPL      3: 信用評価損益率は遅行指標かつ逆張り的解釈が必要。需給面での直接影響が限定的なため低ウェイト。
+// ─────────────────────────────────────────────────────────
 const SCORE_WEIGHTS = {
-  vix: 13,
-  usdjpy: 8,
-  us10y: 7,
-  nasdaq: 11,
-  sp500: 9,
-  nikkeiFutures: 11,
-  advDecline: 8,
-  volume: 5,
-  shortRatio: 5,
-  tokoRachi: 6,
-  marginPL: 6,
-  foreignFlow: 11,
+  // 外部環境
+  nikkeiFutures: 14,
+  vix:           13,
+  nasdaq:        12,
+  sp500:          8,
+  us10y:          7,
+  // 日本株固有
+  foreignFlow:   11,
+  advDecline:    10,
+  usdjpy:         7,
+  // テクニカル・センチメント
+  tokoRachi:      6,
+  shortRatio:     5,
+  volume:         4,
+  marginPL:       3,
 };
-// Sum = 100
+// 合計 = 100
 
 // イベント1件あたりのペナルティ
 const EVENT_PENALTY = 5;
@@ -47,122 +67,156 @@ const STORAGE_KEY = 'japan-stock-monitor-v1';
 // 正規化関数（各指標 -1.0〜+1.0 を返す）
 // ===========================
 
-// VIX: 低いほどリスクオン＝プラス
+// ── VIX ───────────────────────────────────────────────────
+// 中立帯: 18〜22。20以下は市場が落ち着いており好環境。
+// 30超は機関投資家のリスク管理ルールが発動し、強制的なポジション削減が起きる。
 function normVIX(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v < 14)  return  1.0;
-  if (v < 17)  return  0.7;
-  if (v < 20)  return  0.3;
-  if (v < 23)  return  0.0;
-  if (v < 27)  return -0.4;
-  if (v < 32)  return -0.7;
-  return -1.0;
+  if (v < 13)  return  1.0;  // 極端な平静（まれ）
+  if (v < 16)  return  0.8;  // 低ボラ・明確なリスクオン
+  if (v < 20)  return  0.4;  // 平常運転
+  if (v < 23)  return  0.0;  // やや警戒感あり・中立
+  if (v < 28)  return -0.5;  // 明確なリスクオフ
+  if (v < 35)  return -0.8;  // 高恐怖・機関投資家がリスク削減モード
+  return -1.0;               // 危機水準（2020年コロナショック相当）
 }
 
-// USD/JPY: 円安 = プラス（輸出株にプラス）
+// ── USD/JPY ───────────────────────────────────────────────
+// 円安は輸出株・日経全体にプラス。ただし155円超は介入リスクが意識されるため+1.0にしない。
+// 中立帯: 143〜150円（2024〜2025年の「普通」の水準）
 function normUSDJPY(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v > 158)  return  1.0;
-  if (v > 153)  return  0.7;
-  if (v > 148)  return  0.3;
-  if (v > 143)  return  0.0;
-  if (v > 138)  return -0.4;
-  if (v > 133)  return -0.7;
-  return -1.0;
+  if (v > 155)  return  0.7;  // 強い円安（介入リスクで上限を設ける）
+  if (v > 150)  return  1.0;  // 輸出株への最大の追い風
+  if (v > 145)  return  0.4;  // 緩やかな円安
+  if (v > 140)  return  0.0;  // 中立
+  if (v > 135)  return -0.5;  // 円高進行・輸出株の逆風
+  if (v > 130)  return -0.8;
+  return -1.0;               // 急激な円高・リスクオフ圧力
 }
 
-// 米10年債利回り: 低金利 = グロース・株式にプラス
+// ── 米10年債利回り ────────────────────────────────────────
+// 中立帯: 4.0〜4.5%（2024年以降の「新常態」）
+// 4.5%超はグロース株バリュエーション圧縮に直結。5%超は歴史的に株式に厳しい水準。
 function normUS10Y(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v < 3.0)  return  1.0;
-  if (v < 3.5)  return  0.6;
-  if (v < 4.0)  return  0.2;
-  if (v < 4.5)  return -0.2;
-  if (v < 5.0)  return -0.6;
-  return -1.0;
+  if (v < 3.5)  return  1.0;  // 低金利・リスク資産に追い風
+  if (v < 4.0)  return  0.5;
+  if (v < 4.5)  return  0.0;  // 現状の中立帯
+  if (v < 5.0)  return -0.5;  // グロース売りの圧力
+  if (v < 5.5)  return -0.8;
+  return -1.0;               // 歴史的高水準・株式バリュエーション圧縮
 }
 
-// 騰落率（NASDAQ / S&P500 / 日経先物 共通）
+// ── 米株騰落率（NASDAQ / S&P500 共通） ────────────────────
+// ±0.5%未満はノイズ。±1.5%超で方向性が明確になる。
 function normReturn(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v >  2.0)  return  1.0;
-  if (v >  1.0)  return  0.7;
-  if (v >  0.3)  return  0.3;
-  if (v > -0.3)  return  0.0;
-  if (v > -1.0)  return -0.3;
-  if (v > -2.0)  return -0.7;
+  if (v >  2.5)  return  1.0;
+  if (v >  1.5)  return  0.7;
+  if (v >  0.5)  return  0.3;
+  if (v > -0.5)  return  0.0;  // ノイズ帯
+  if (v > -1.5)  return -0.4;
+  if (v > -2.5)  return -0.7;
   return -1.0;
 }
 
-// 値上がり・値下がり銘柄比率
+// ── 日経先物（専用関数）──────────────────────────────────
+// 最重要指標。SGX/CMEの日経先物が翌朝の寄り付きに直接反映される。
+// 閾値を米株より狭く設定（小さな動きでも実際の寄り付きに影響するため）。
+function normNikkeiFutures(v) {
+  if (v === null || isNaN(v)) return 0;
+  if (v >  1.5)  return  1.0;
+  if (v >  0.8)  return  0.6;
+  if (v >  0.2)  return  0.2;
+  if (v > -0.2)  return  0.0;  // ±0.2%はノイズ
+  if (v > -0.8)  return -0.4;
+  if (v > -1.5)  return -0.7;
+  return -1.0;
+}
+
+// ── 値上がり/値下がり銘柄比率 ────────────────────────────
+// 東証プライム約2000銘柄ベース。0.5（50%）が中立。
+// 0.70超で「広範な上昇」、0.30未満で「全面安」と判断。
 function normAdvDecline(adv, dec) {
   if (!adv || !dec || isNaN(adv) || isNaN(dec)) return 0;
   const total = adv + dec;
   if (total === 0) return 0;
   const ratio = adv / total;
-  if (ratio > 0.75) return  1.0;
+  if (ratio > 0.75) return  1.0;  // 広範な上昇
   if (ratio > 0.65) return  0.6;
   if (ratio > 0.55) return  0.2;
-  if (ratio > 0.45) return  0.0;
-  if (ratio > 0.35) return -0.3;
+  if (ratio > 0.45) return  0.0;  // ±5%は中立
+  if (ratio > 0.35) return -0.4;
   if (ratio > 0.25) return -0.7;
-  return -1.0;
+  return -1.0;  // 全面安
 }
 
-// 売買代金（兆円）
+// ── 売買代金（兆円） ──────────────────────────────────────
+// 近年の東証プライムの「普通の1日」は3〜4兆円。
+// 活発な売買は方向性を問わず需給の存在感を示す。2兆円以下は閑散。
 function normVolume(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v > 5.0)  return  1.0;
+  if (v > 5.0)  return  1.0;  // 活況（大きなイベントデー水準）
   if (v > 4.0)  return  0.6;
-  if (v > 3.0)  return  0.2;
-  if (v > 2.0)  return -0.2;
-  if (v > 1.0)  return -0.6;
+  if (v > 3.0)  return  0.2;  // 平均的な水準
+  if (v > 2.0)  return -0.3;
+  if (v > 1.5)  return -0.7;  // 閑散・参加者少ない
   return -1.0;
 }
 
-// 空売り比率（%）: 低いほど需給良好
+// ── 空売り比率（%） ───────────────────────────────────────
+// ETF設定・高頻度取引の影響で構造的に上昇傾向。2024年の中立帯は43〜47%程度。
+// 55%超は明確な売り圧力。40%未満はポジティブなセンチメント。
 function normShortRatio(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v < 38)  return  1.0;
-  if (v < 42)  return  0.5;
-  if (v < 46)  return  0.1;
-  if (v < 50)  return -0.4;
+  if (v < 40)  return  1.0;  // 強気センチメント
+  if (v < 43)  return  0.5;
+  if (v < 47)  return  0.0;  // 中立帯
+  if (v < 51)  return -0.4;
   if (v < 55)  return -0.7;
   return -1.0;
 }
 
-// 騰落レシオ: 100〜120が健全。120超は過熱。
+// ── 騰落レシオ（25日）────────────────────────────────────
+// 100が基準。100〜120が健全な上昇相場を示す最良の需給ゾーン。
+// 130超は過熱で反落リスク。70未満は売られすぎだが需給悪化が続いている状態。
 function normTokoRachi(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v > 140) return -0.3;
-  if (v > 120) return  0.3;
-  if (v > 100) return  0.8;
-  if (v > 80)  return  0.2;
-  if (v > 60)  return -0.4;
-  return -1.0;
+  if (v > 140) return -0.5;  // 過熱: 短期反落リスクあり
+  if (v > 120) return  0.3;  // やや過熱だが上昇トレンド継続中
+  if (v > 100) return  0.9;  // 需給良好の最良ゾーン
+  if (v >  85) return  0.1;  // やや弱いがまずまず
+  if (v >  70) return -0.5;  // 需給悪化
+  return -1.0;               // 広範な売り圧力（逆張り機会についてはコメントで補足）
 }
 
-// 信用評価損益率: 悪化しすぎると逆張り的プラスだが需給面では注意
+// ── 信用評価損益率（%）────────────────────────────────────
+// 需給面に特化したスコアリング。逆張り解釈はgenerateComment()側で対処。
+//   ゼロ以上や-5%以内: 含み益保有者の利食い売り圧力が高い → マイナス評価
+//   -12%以下:          ロスカット売りが継続中 → マイナス評価
+//   -20%以下:          ロスカット一巡の可能性 → 中立（コメントで逆張りに言及）
 function normMarginPL(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v < -25)  return  0.8;  // 極端な悪化 = 逆張り機会
-  if (v < -15)  return  0.4;
-  if (v < -8)   return  0.0;
-  if (v < -3)   return -0.3;
-  if (v <  0)   return -0.5;
-  return -0.8;  // 含み益過大 = 利食い売り圧力
+  if (v < -20)  return  0.0;   // ロスカット一巡の可能性。スコアは中立（コメントで注記）
+  if (v < -12)  return -0.4;   // ロスカット売り発生中・需給の重し
+  if (v <  -5)  return -0.1;   // やや弱い
+  if (v <   0)  return  0.1;   // 若干の含み損。健全な水準
+  return -0.6;                 // ゼロ以上（含み益過多）: 利食い売り圧力が高い
 }
 
-// 海外投資家フロー（億円）
+// ── 海外投資家フロー（億円）──────────────────────────────
+// 東証プライム売買の約65%を外国人が占める最重要指標。
+// 典型的な1日の買越/売越レンジ: ±500〜2000億円程度。
 function normForeignFlow(v) {
   if (v === null || isNaN(v)) return 0;
-  if (v >  2000) return  1.0;
-  if (v >  800)  return  0.7;
-  if (v >  200)  return  0.3;
-  if (v > -200)  return  0.0;
-  if (v > -800)  return -0.4;
+  if (v >  2000) return  1.0;  // 大規模買越: 強いリスクオン
+  if (v >   800) return  0.7;
+  if (v >   200) return  0.3;
+  if (v >  -200) return  0.0;  // 中立帯
+  if (v >  -800) return -0.4;
   if (v > -2000) return -0.7;
-  return -1.0;
+  return -1.0;               // 大規模売越: 明確なリスクオフ
 }
 
 // ===========================
@@ -211,7 +265,7 @@ function calculateScore(data) {
       key: 'nikkeiFutures',
       label: '日経先物',
       weight: SCORE_WEIGHTS.nikkeiFutures,
-      normalized: normReturn(data.nikkeiFutures),
+      normalized: normNikkeiFutures(data.nikkeiFutures),
     },
     {
       key: 'advDecline',
@@ -258,6 +312,17 @@ function calculateScore(data) {
     raw += item.contribution;
   }
 
+  // 外部環境・内部指標のサブスコアを計算（コメント生成での乖離検知に使用）
+  // extNorm/intNorm は -1〜+1 の加重平均。0 = 中立。
+  const EXT_KEYS = ['vix', 'nasdaq', 'sp500', 'nikkeiFutures', 'us10y'];
+  const INT_KEYS = ['advDecline', 'foreignFlow', 'usdjpy', 'volume', 'shortRatio', 'tokoRachi', 'marginPL'];
+  const extItems = items.filter(i => EXT_KEYS.includes(i.key));
+  const intItems = items.filter(i => INT_KEYS.includes(i.key));
+  const extWt = extItems.reduce((s, i) => s + i.weight, 0);
+  const intWt = intItems.reduce((s, i) => s + i.weight, 0);
+  const extNorm = extWt > 0 ? extItems.reduce((s, i) => s + i.contribution, 0) / extWt : 0;
+  const intNorm = intWt > 0 ? intItems.reduce((s, i) => s + i.contribution, 0) / intWt : 0;
+
   // イベントペナルティ計算
   let eventPenalty = 0;
   if (data.bojEvent) eventPenalty += EVENT_PENALTY;
@@ -266,7 +331,7 @@ function calculateScore(data) {
   // 最終スコアを0〜100に丸める
   const score = Math.max(0, Math.min(100, Math.round(raw - eventPenalty)));
 
-  return { score, breakdown: items, eventPenalty };
+  return { score, breakdown: items, eventPenalty, extNorm, intNorm };
 }
 
 // ===========================
@@ -324,8 +389,9 @@ function getRiskClassification(score) {
  * @param {number} score - 計算済みスコア
  * @returns {string} - 日本語コメント
  */
-function generateComment(data, score) {
+function generateComment(data, score, context) {
   const parts = [];
+  const ctx = context || { extNorm: 0, intNorm: 0 };
 
   // 1. VIX コメント
   if (data.vix !== null && !isNaN(data.vix)) {
@@ -436,16 +502,24 @@ function generateComment(data, score) {
     parts.push('円高進行が輸出株・外需株の収益に影響する可能性があります。');
   }
 
-  // 10. イベントコメント
+  // 10. 外部環境・内部指標の乖離検知（extNorm/intNorm の差が大きい場合に警告）
+  // extNorm > 0 = 外部環境ポジティブ、intNorm < 0 = 内部指標ネガティブ（またはその逆）
+  if (ctx.extNorm > 0.3 && ctx.intNorm < -0.2) {
+    parts.push('【注目】外部環境（米株・VIX・先物）は強いが、内部指標（騰落比・海外フロー等）は弱い。上値の重い展開に注意が必要です。');
+  } else if (ctx.extNorm < -0.2 && ctx.intNorm > 0.3) {
+    parts.push('【注目】外部環境は弱いが、内部指標は底堅い。下値は限定的で、個別株が意外に健闘する可能性があります。');
+  }
+
+  // 11. イベントコメント
   if (data.bojEvent) {
-    parts.push('本日は日銀イベントがあります。政策変更・発言内容によっては市場が大きく動く可能性があります。');
+    parts.push('本日は日銀イベントがあります。政策変更・発言内容によっては市場が大きく動く可能性があります。ポジションは慎重に。');
   }
 
   if (data.fomcEvent) {
-    parts.push('FOMC・CPI等の重要イベントがあります。米国金融政策の方向性への注目が高まっています。');
+    parts.push('FOMC・CPI等の重要イベントがあります。結果次第でドル・金利が大きく動き、日本株のボラティリティが高まる可能性があります。');
   }
 
-  // 11. スコアサマリー（必須）
+  // 12. スコアサマリー（必須）
   if (score >= 75) {
     parts.push('【総括】総じて需給良好な環境です。モメンタム継続に期待できる局面です。');
   } else if (score >= 60) {
@@ -812,10 +886,10 @@ function runJudgment() {
   saveToStorage(data);
 
   // 3. スコア計算
-  const { score, breakdown, eventPenalty } = calculateScore(data);
+  const { score, breakdown, eventPenalty, extNorm, intNorm } = calculateScore(data);
 
   // 4. コメント生成
-  const comment = generateComment(data, score);
+  const comment = generateComment(data, score, { extNorm, intNorm });
 
   // 5. UIを更新
   updateResultUI(score, breakdown, eventPenalty, comment, data);
