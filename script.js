@@ -473,16 +473,19 @@ function setFormData(data) {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = (val !== null && val !== undefined) ? val : '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
   function setText(id, val) {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = val || '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
   function setCheck(id, val) {
     const el = document.getElementById(id);
     if (!el) return;
     el.checked = !!val;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   setNum('vix', data.vix);
