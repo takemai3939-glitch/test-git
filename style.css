@@ -818,6 +818,13 @@ a:visited { color: inherit; }
   transition: background 0.15s, border-color 0.15s;
   line-height: 1;
   padding: 0;
+  position: relative;
+}
+/* タップ領域を44×44pxに拡大（Apple HIG準拠） */
+.help-btn::before {
+  content: '';
+  position: absolute;
+  inset: -13px;
 }
 .help-btn:hover, .help-btn.active {
   background: rgba(99,102,241,0.2);
@@ -851,7 +858,7 @@ textarea {
   width: 100%;
   transition: border-color 0.2s, box-shadow 0.2s;
   font-family: inherit;
-  min-height: 42px;
+  min-height: 44px;
 }
 input[type="number"]:focus,
 textarea:focus {
@@ -1026,6 +1033,42 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
   margin-top: 6px;
   letter-spacing: 0.02em;
   line-height: 1.5;
+}
+
+/* ===========================
+   前回値復元バー
+   =========================== */
+.restore-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.btn-restore {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  min-height: 36px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.btn-restore:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: rgba(99,102,241,0.06);
+}
+.btn-restore:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
 }
 
 /* 保存完了トースト */
@@ -1915,9 +1958,9 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
 }
 
 /* ===========================
-   Mobile (≤767px)
+   Mobile (≤768px)
    =========================== */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   /* ヘッダー */
   .header-cta  { display: none; }
   .header-date { flex: 1; text-align: right; }
@@ -1935,28 +1978,52 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
   .hero-actions  { flex-direction: column; align-items: center; gap: 14px; }
   .hero-trust    { justify-content: center; }
 
-  /* アプリ: 1カラム・結果パネルを先頭に */
+  /* アプリ: 1カラム */
   .app-main {
     display: flex;
     flex-direction: column;
     padding: 16px 16px 100px;
     gap: 16px;
   }
+  .input-panel { order: 1; }
+
+  /* 結果パネル: 判定前は非表示、判定後はstickyで上部追従 */
   .result-panel {
     order: -1;
+    display: none;
     position: static;
     max-height: none;
     overflow-y: visible;
   }
-  .input-panel { order: 1; }
+  .result-panel.result-confirmed {
+    display: block;
+    position: sticky;
+    top: 60px;
+    z-index: 90;
+    max-height: 46vh;
+    overflow-y: auto;
+  }
 
   /* カード */
-  .card       { padding: 16px; border-radius: var(--radius); }
-  .input-grid { gap: 10px; }
+  .card        { padding: 16px; border-radius: var(--radius); }
+  .card-step   { min-width: 34px; height: 34px; font-size: 13px; }
+  .card-title  { font-size: 15px; }
 
-  /* iOS zoom防止 */
+  /* 入力グリッド: フィールド間隔を16px以上確保 */
+  .input-grid  { gap: 16px; }
+  .input-item  { margin-bottom: 0; }
+
+  /* iOS zoom防止 + タップターゲット44px */
   input[type="number"],
   textarea { font-size: 16px; min-height: 46px; }
+
+  /* ヘルプボタン: モバイルでも44×44タップ領域 */
+  .help-btn { width: 22px; height: 22px; }
+  .help-btn::before { inset: -11px; }
+
+  /* 復元バー */
+  .restore-bar { margin-bottom: 16px; }
+  .btn-restore { min-height: 44px; font-size: 13px; }
 
   /* スコアリング */
   .score-ring-wrap { width: 160px; height: 160px; }
@@ -1999,4 +2066,5 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
   .hero-flow      { gap: 4px; }
   .hero-step      { padding: 7px 9px; }
   .hf-text        { font-size: 11px; }
+  .input-grid     { gap: 16px; }
 }

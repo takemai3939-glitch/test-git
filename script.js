@@ -508,8 +508,15 @@ function setFormData(data) {
 // ローカルストレージ
 // ===========================
 
-function saveToStorage(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function saveToStorage(data, withTimestamp = false) {
+  const existing = loadFromStorage();
+  const toSave = { ...data };
+  if (withTimestamp) {
+    toSave.savedAt = new Date().toISOString();
+  } else if (existing && existing.savedAt) {
+    toSave.savedAt = existing.savedAt; // 既存タイムスタンプを保持
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 }
 
 function loadFromStorage() {
@@ -759,7 +766,7 @@ function updateDate() {
 
 function runJudgment(saveToHistory = false) {
   const data = getFormData();
-  saveToStorage(data);
+  saveToStorage(data, saveToHistory); // saveToHistory=true のときだけタイムスタンプ更新
   const { score, breakdown, eventPenalty, extNorm, intNorm } = calculateScore(data);
   const comment = generateComment(data, score, { extNorm, intNorm });
   updateResultUI(score, breakdown, eventPenalty, comment, data);
@@ -867,6 +874,48 @@ function showSaveToast(msg = '履歴に保存しました') {
       toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2600);
     });
   });
+}
+
+// ===========================
+// 前回値復元
+// ===========================
+
+/** 復元ボタンのdisabled状態をlocalStorageの有無に応じて更新 */
+function updateRestoreButton() {
+  const btn = document.getElementById('btn-restore');
+  if (!btn) return;
+  const saved = loadFromStorage();
+  const hasData = !!(saved && saved.savedAt);
+  btn.disabled = !hasData;
+  btn.title = hasData ? '' : '保存データなし';
+}
+
+/** localStorageから前回値を復元してトーストを表示 */
+function restoreFromStorage() {
+  const saved = loadFromStorage();
+  if (!saved) return;
+  setFormData(saved);
+  let dateStr = '';
+  if (saved.savedAt) {
+    const d = new Date(saved.savedAt);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    dateStr = `${mm}/${dd} ${hh}:${min}`;
+  }
+  showSaveToast(dateStr ? `前回（${dateStr}）の値を復元しました` : '前回の値を復元しました');
+}
+
+/** モバイル時の結果パネルstickyクラスを制御 */
+function setMobileResultVisible(visible) {
+  const panel = document.querySelector('.result-panel');
+  if (!panel) return;
+  if (visible) {
+    panel.classList.add('result-confirmed');
+  } else {
+    panel.classList.remove('result-confirmed');
+  }
 }
 
 /**
@@ -1201,6 +1250,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ヘルプボタン初期化
   initHelpButtons();
 
+  // 復元ボタン初期化
+  const btnRestore = document.getElementById('btn-restore');
+  if (btnRestore) btnRestore.addEventListener('click', restoreFromStorage);
+  updateRestoreButton();
+
   // ===========================
   // ヘルパー — スクロール・ハイライト・ステップ
   // ===========================
@@ -1328,6 +1382,8 @@ document.addEventListener('DOMContentLoaded', () => {
           setStepPhase('done');
           headerCta.disabled = false;
           updateHeaderCta();
+          updateRestoreButton();
+          setMobileResultVisible(true);
 
           if (window.innerWidth < 900) {
             // モバイル: 結果は上部にある（order: -1）
@@ -1359,6 +1415,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hasJudged = true;
     setStepPhase('done');
     updateHeaderCta();
+    updateRestoreButton();
+    setMobileResultVisible(true);
     if (window.innerWidth < 900) {
       setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
     }
@@ -1369,6 +1427,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hasJudged = false;
     setStepPhase('input');
     updateHeaderCta();
+    updateRestoreButton();
+    setMobileResultVisible(false);
   });
 
   // 判定・リセットボタン（スマホ）
@@ -1378,6 +1438,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hasJudged = true;
     setStepPhase('done');
     updateHeaderCta();
+    updateRestoreButton();
+    setMobileResultVisible(true);
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
   });
   const btnResetMobile = document.getElementById('btn-reset-mobile');
@@ -1386,6 +1448,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hasJudged = false;
     setStepPhase('input');
     updateHeaderCta();
+    updateRestoreButton();
+    setMobileResultVisible(false);
   });
 
   // 履歴ボタン
@@ -1420,6 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setFormData(SAMPLE_VALUES);
   }
   runJudgment(false);
+  updateRestoreButton(); // 初期状態でボタンのdisabled/enabled を反映
 
   // 履歴テーブル・チャートの初期描画
   renderHistoryTable();
