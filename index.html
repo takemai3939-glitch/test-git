@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#080811">
+
+  <!-- ===== セキュリティヘッダー ===== -->
+  <!-- CSP: 同一オリジンのスクリプト・スタイルのみ許可。外部通信・インラインスクリプトを禁止 -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+  <!-- MIMEスニッフィング防止 -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <!-- リファラー情報を送信しない -->
+  <meta name="referrer" content="no-referrer">
+
   <title>日本株需給モニター — 5秒で地合いを可視化</title>
   <link rel="stylesheet" href="style.css">
 </head>

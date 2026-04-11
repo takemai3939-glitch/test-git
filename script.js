@@ -63,6 +63,42 @@ const SAMPLE_VALUES = {
 // ローカルストレージキー
 const STORAGE_KEY = 'japan-stock-monitor-v1';
 
+// localStorageサイズ上限
+const LS_FORM_LIMIT    = 50  * 1024; // フォーム保存: 50KB
+const LS_HISTORY_LIMIT = 200 * 1024; // 履歴保存: 200KB
+
+// ===========================
+// セキュリティユーティリティ
+// ===========================
+
+/**
+ * HTML特殊文字をエスケープする（XSS防止用）
+ * innerHTML に動的な文字列を挿入する箇所で使用する
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * 改行を <br> に変換してテキストをDOMに安全に挿入する
+ * innerHTML の代替として使用する
+ */
+function setCommentText(el, text) {
+  if (!el) return;
+  el.replaceChildren();
+  const lines = String(text).split('\n');
+  lines.forEach((line, i) => {
+    el.appendChild(document.createTextNode(line));
+    if (i < lines.length - 1) el.appendChild(document.createElement('br'));
+  });
+}
+
 // ===========================
 // 正規化関数（各指標 -1.0〜+1.0 を返す）
 // ===========================
@@ -432,14 +468,18 @@ function detectKeywords(text) {
 function getFormData() {
   function getNum(id) {
     const el = document.getElementById(id);
-    if (!el) return null;
+    if (!el || el.value === '') return null;
     const v = parseFloat(el.value);
-    return isNaN(v) ? null : v;
+    // NaN・Infinity・異常値（±100万超）を除外
+    if (!isFinite(v)) return null;
+    if (Math.abs(v) > 1_000_000) return null;
+    return v;
   }
   function getText(id) {
     const el = document.getElementById(id);
     if (!el) return '';
-    return el.value.trim();
+    // 2000文字上限でテキストを切り詰め
+    return el.value.trim().slice(0, 2000);
   }
   function getCheck(id) {
     const el = document.getElementById(id);
@@ -519,7 +559,9 @@ function saveToStorage(data, withTimestamp = false) {
   } else if (existing && existing.savedAt) {
     toSave.savedAt = existing.savedAt; // 既存タイムスタンプを保持
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  const json = JSON.stringify(toSave);
+  if (json.length > LS_FORM_LIMIT) return; // サイズ上限超過時は保存しない
+  localStorage.setItem(STORAGE_KEY, json);
 }
 
 function loadFromStorage() {
@@ -607,9 +649,9 @@ function updateResultUI(score, breakdown, eventPenalty, comment, data) {
   const riskEl = document.getElementById('risk-classification');
   if (riskEl) riskEl.textContent = getRiskClassification(score);
 
-  // 5. コメント
+  // 5. コメント（setCommentTextで\nを<br>に安全変換）
   const commentEl = document.getElementById('comment-text');
-  if (commentEl) commentEl.innerHTML = comment.replace(/\n/g, '<br>');
+  setCommentText(commentEl, comment);
 
   // 6. ブレークダウンテーブル
   const tableEl = document.getElementById('breakdown-table');
@@ -810,7 +852,7 @@ function resetForm() {
   if (riskEl) riskEl.textContent = '--';
 
   const commentEl = document.getElementById('comment-text');
-  if (commentEl) commentEl.innerHTML = 'フォームに数値を入力し「判定して結果を表示」を押してください。';
+  if (commentEl) commentEl.textContent = 'フォームに数値を入力し「判定して結果を表示」を押してください。';
 
   const tableEl = document.getElementById('breakdown-table');
   if (tableEl) tableEl.innerHTML = '';
@@ -839,7 +881,11 @@ function loadHistory() {
 }
 
 function saveHistoryData(history) {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch { /* storage unavailable */ }
+  try {
+    const json = JSON.stringify(history);
+    if (json.length > LS_HISTORY_LIMIT) return; // サイズ上限超過時は保存しない
+    localStorage.setItem(HISTORY_KEY, json);
+  } catch { /* storage unavailable */ }
 }
 
 function addHistoryRecord(data, score, comment) {
@@ -968,20 +1014,20 @@ function renderHistoryTable() {
     card.dataset.id = rec.id;
     card.innerHTML = `
       <div class="hist-card-top">
-        <input type="checkbox" class="history-check" data-id="${rec.id}" aria-label="比較選択">
-        <span class="hist-date">${dateStr}</span>
-        <button class="btn-load-rec" data-id="${rec.id}">読込</button>
-        <button class="btn-del-rec"  data-id="${rec.id}">削除</button>
+        <input type="checkbox" class="history-check" data-id="${escapeHtml(rec.id)}" aria-label="比較選択">
+        <span class="hist-date">${escapeHtml(dateStr)}</span>
+        <button class="btn-load-rec" data-id="${escapeHtml(rec.id)}">読込</button>
+        <button class="btn-del-rec"  data-id="${escapeHtml(rec.id)}">削除</button>
       </div>
       <div class="hist-score-wrap">
-        <span class="hist-score-num ${j.colorClass}">${rec.score}</span>
-        <span class="hist-judgment ${j.colorClass}">${j.label}</span>
+        <span class="hist-score-num ${escapeHtml(j.colorClass)}">${escapeHtml(rec.score)}</span>
+        <span class="hist-judgment ${escapeHtml(j.colorClass)}">${escapeHtml(j.label)}</span>
       </div>
       <div class="hist-metrics">
-        <div class="hist-metric-item"><span class="hm-label">VIX</span><span class="hm-val">${rec.data.vix ?? '--'}</span></div>
-        <div class="hist-metric-item"><span class="hm-label">ドル円</span><span class="hm-val">${rec.data.usdjpy ?? '--'}</span></div>
-        <div class="hist-metric-item"><span class="hm-label">先物</span><span class="hm-val">${futuresStr}</span></div>
-        <div class="hist-metric-item"><span class="hm-label">騰落比</span><span class="hm-val">${advRatioStr}</span></div>
+        <div class="hist-metric-item"><span class="hm-label">VIX</span><span class="hm-val">${escapeHtml(rec.data.vix ?? '--')}</span></div>
+        <div class="hist-metric-item"><span class="hm-label">ドル円</span><span class="hm-val">${escapeHtml(rec.data.usdjpy ?? '--')}</span></div>
+        <div class="hist-metric-item"><span class="hm-label">先物</span><span class="hm-val">${escapeHtml(futuresStr)}</span></div>
+        <div class="hist-metric-item"><span class="hm-label">騰落比</span><span class="hm-val">${escapeHtml(advRatioStr)}</span></div>
       </div>
     `;
     tbodyEl.appendChild(card);
@@ -1075,18 +1121,18 @@ function renderComparison(recA, recB) {
   let html = `
     <div class="comp-score-row">
       <div class="comp-score-box">
-        <div class="comp-date-label">${fmtDate(recA.date)}</div>
-        <div class="comp-score-num ${jA.colorClass}">${recA.score}</div>
-        <div class="comp-judgment-label ${jA.colorClass}">${jA.label}</div>
+        <div class="comp-date-label">${escapeHtml(fmtDate(recA.date))}</div>
+        <div class="comp-score-num ${escapeHtml(jA.colorClass)}">${escapeHtml(recA.score)}</div>
+        <div class="comp-judgment-label ${escapeHtml(jA.colorClass)}">${escapeHtml(jA.label)}</div>
       </div>
       <div class="comp-delta-box">
         <div class="comp-delta-label">差分</div>
-        <div class="comp-delta-num ${deltaClass}">${deltaStr}</div>
+        <div class="comp-delta-num ${escapeHtml(deltaClass)}">${escapeHtml(deltaStr)}</div>
       </div>
       <div class="comp-score-box">
-        <div class="comp-date-label">${fmtDate(recB.date)}</div>
-        <div class="comp-score-num ${jB.colorClass}">${recB.score}</div>
-        <div class="comp-judgment-label ${jB.colorClass}">${jB.label}</div>
+        <div class="comp-date-label">${escapeHtml(fmtDate(recB.date))}</div>
+        <div class="comp-score-num ${escapeHtml(jB.colorClass)}">${escapeHtml(recB.score)}</div>
+        <div class="comp-judgment-label ${escapeHtml(jB.colorClass)}">${escapeHtml(jB.label)}</div>
       </div>
     </div>
     <div class="comparison-table-scroll">
@@ -1094,9 +1140,9 @@ function renderComparison(recA, recB) {
         <thead>
           <tr>
             <th>指標</th>
-            <th>${fmtDate(recA.date)}</th>
+            <th>${escapeHtml(fmtDate(recA.date))}</th>
             <th class="ct-center">変化</th>
-            <th>${fmtDate(recB.date)}</th>
+            <th>${escapeHtml(fmtDate(recB.date))}</th>
           </tr>
         </thead>
         <tbody>
@@ -1115,13 +1161,13 @@ function renderComparison(recA, recB) {
       if (diff !== 0 && m.better !== null) {
         cls = (m.better ? diff > 0 : diff < 0) ? 'diff-pos' : 'diff-neg';
       }
-      diffHtml = `<span class="${cls}">${diffStr}</span>`;
+      diffHtml = `<span class="${escapeHtml(cls)}">${escapeHtml(diffStr)}</span>`;
     }
-    const dispA = vA != null ? `${vA}${m.unit}` : '--';
-    const dispB = vB != null ? `${vB}${m.unit}` : '--';
+    const dispA = vA != null ? `${escapeHtml(vA)}${escapeHtml(m.unit)}` : '--';
+    const dispB = vB != null ? `${escapeHtml(vB)}${escapeHtml(m.unit)}` : '--';
     html += `
       <tr>
-        <td class="ct-metric">${m.label}</td>
+        <td class="ct-metric">${escapeHtml(m.label)}</td>
         <td>${dispA}</td>
         <td class="ct-center">${diffHtml}</td>
         <td>${dispB}</td>
